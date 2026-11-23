@@ -1,0 +1,165 @@
+:is(#pane-lab,#pane-ink) {
+    --lab-bg: #0b1525;
+    --lab-panel: #101c2d;
+    --lab-ink: #e3ecfa;
+    --lab-muted: #a5b6ca;
+    --lab-line: #41536a;
+    --lab-mint: #a5f5d5;
+    --lab-blood: #ff968d;
+    --lab-hrs: #c5a8ff;
+    background: var(--lab-bg);
+    color: var(--lab-ink);
+    padding: clamp(10px, 2vw, 26px);
+    border: 1px solid var(--lab-line);
+    border-radius: 6px;
+    color-scheme: dark;
+    font-family: "Geist", "Inter", system-ui, sans-serif;
+}
+:is(#pane-lab,#pane-ink) h2, :is(#pane-lab,#pane-ink) h3 { margin: 0; color: var(--lab-ink); letter-spacing: -0.02em; }
+:is(#pane-lab,#pane-ink) h2 { color: var(--lab-mint); font-size: clamp(22px, 3vw, 32px); }
+:is(#pane-lab,#pane-ink) h3 { font-size: 16px; }
+.lab-heading, .lab-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.lab-heading { justify-content: space-between; margin-bottom: 15px; }
+.lab-workspace { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 10px; }
+.lab-visual { min-width: 0; }
+.lab-comparison[data-camera] { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.lab-comparison[data-guiding] { grid-template-columns: minmax(0, 1fr); }
+.lab-comparison[data-guiding] .lab-stage { display: none; }
+.lab-comparison[data-guiding] .lab-camera-panel { min-height: clamp(290px, 53vh, 500px); }
+#pane-lab:has(.lab-comparison[data-guiding]) .lab-pose-actions,
+#pane-lab:has(.lab-comparison[data-guiding]) .lab-pose-panel .lab-controls { display: none; }
+.lab-comparison[data-camera] .lab-stage { min-height: 340px; }
+.lab-comparison[data-camera] .lab-stage-tools { inset: 8px 8px auto; }
+.lab-comparison[data-camera] #lab-source { flex-basis: 100%; }
+.lab-camera-panel { position: relative; min-height: 240px; overflow: hidden; background: #080f1d; }
+#lab-webcam, #lab-hand-overlay { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+#lab-webcam[data-mirror], #lab-webcam[data-mirror] + #lab-hand-overlay { transform: scaleX(-1); }
+#lab-hand-overlay { pointer-events: none; }
+.lab-guided-panel { border-left: 2px solid var(--lab-mint); padding-left: 9px; margin-top: 9px; }
+.lab-guide-overlay { position: absolute; inset: 8px 8px auto; display: grid; gap: 5px; pointer-events: none; }
+.lab-guide-key { display: flex; flex-wrap: wrap; gap: 12px; justify-self: start; font: 11px ui-monospace, monospace; }
+.lab-guide-key, .lab-guide-instruction { padding: 5px 7px; background: #0b1525ee; border-radius: 4px; }
+.lab-guide-key span:first-child { color: var(--lab-mint); }
+.lab-guide-key span:last-child { color: #fff1bb; }
+.lab-guide-instruction { display: grid; gap: 4px; }
+.lab-guide-instruction progress { width: 100%; height: 5px; accent-color: var(--lab-mint); margin: 0; }
+:is(#pane-lab,#pane-ink) [hidden] { display: none; }
+#pane-lab[data-guided-pose] .lab-manual-pose { display: none; }
+.lab-mirror { position: absolute; bottom: 9px; left: 9px; padding: 3px 6px; border-radius: 4px; background: #0b1525; }
+.lab-pose-panel { margin-top: 8px; padding: 10px 12px; }
+.lab-pose-actions { margin-top: 8px; }
+.lab-controls .lab-pose-flip { display: flex; align-items: center; }
+.lab-panel { border: 1px solid var(--lab-line); border-radius: 5px; background: var(--lab-panel); min-width: 0; }
+.lab-stage { position: relative; min-height: 490px; overflow: hidden; }
+#lab-ring { width: 100%; height: 100%; position: absolute; inset: 0; }
+.lab-stage-tools, .lab-stage-readouts {
+    position: absolute; inset: 14px 14px auto; display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+}
+.lab-stage-readouts { inset: auto 14px 12px; justify-content: space-between; pointer-events: none; }
+#lab-source { margin-right: auto; color: var(--lab-mint); }
+:is(#pane-lab,#pane-ink) output { color: var(--lab-muted); font: 12px "IBM Plex Mono", ui-monospace, monospace; }
+:is(#pane-lab,#pane-ink) button, :is(#pane-lab,#pane-ink) input, :is(#pane-lab,#pane-ink) select {
+    background: #0b1525; color: var(--lab-ink); border: 1px solid var(--lab-line);
+    border-radius: 4px; padding: 5px 8px; margin: 0; font: inherit; font-size: 12px; max-width: 100%;
+}
+:is(#pane-lab,#pane-ink) button { cursor: pointer; }
+:is(#pane-lab,#pane-ink) button:hover, :is(#pane-lab,#pane-ink) button[aria-pressed="true"] { border-color: var(--lab-mint); color: var(--lab-mint); }
+:is(#pane-lab,#pane-ink) button:disabled { opacity: .45; cursor: default; }
+:is(#pane-lab,#pane-ink) button:focus-visible, :is(#pane-lab,#pane-ink) input:focus-visible, :is(#pane-lab,#pane-ink) select:focus-visible { outline: 2px solid var(--lab-mint); outline-offset: 2px; }
+:is(#pane-lab,#pane-ink) input[type="number"] { width: 7ch; }
+#pane-lab #lab-window { width: 9ch; }
+.lab-signals { padding: 13px; }
+.lab-signals section + section { border-top: 1px solid var(--lab-line); margin-top: 13px; padding-top: 13px; }
+.lab-signals h3 { margin-right: auto !important; }
+.lab-trace { display: block; width: 100%; height: 106px; margin: 8px 0; }
+#lab-impulse { height: 76px; }
+.lab-reading { margin-bottom: 8px; }
+#pane-lab #lab-blood-read { color: var(--lab-blood); }
+#pane-lab #lab-hrs-read { color: var(--lab-hrs); }
+#pane-lab #lab-gate[data-on] { color: var(--lab-mint); }
+.lab-axis-key { margin-left: auto; align-self: flex-end; display: flex; gap: 7px; font: 12px ui-monospace, monospace; }
+.lab-axis-key b:nth-child(1) { color: #8be8d4; }
+.lab-axis-key b:nth-child(2) { color: #f3be83; }
+.lab-axis-key b:nth-child(3) { color: #b6a8ff; }
+.lab-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 7px 13px; margin-top: 10px; }
+.lab-controls label { display: grid; gap: 4px; color: var(--lab-muted); font-size: 12px; }
+.lab-strip { margin-top: 10px; padding: 12px 14px; }
+.lab-strip h3 { margin-right: 10px !important; }
+.lab-capture { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 16px; }
+.lab-capture h3 { margin-bottom: 7px !important; }
+#lab-label { width: 11ch; }
+#lab-take { display: block; margin-top: 7px; }
+#lab-events { list-style: none; padding: 0; margin: 0; font: 12px "IBM Plex Mono", ui-monospace, monospace; }
+#lab-events li { display: flex; gap: 8px; border-top: 1px solid var(--lab-line); padding: 4px 0; }
+#lab-events time { color: var(--lab-muted); flex-shrink: 0; }
+@media (max-width: 820px) {
+    .lab-workspace, .lab-capture { grid-template-columns: minmax(0, 1fr); }
+    .lab-stage { min-height: 370px; }
+}
+@media (max-width: 480px) {
+    .lab-comparison[data-camera] { grid-template-columns: minmax(0, 1fr); }
+    .lab-comparison[data-camera] .lab-stage, .lab-camera-panel { min-height: 255px; }
+}
+
+.lab-squeeze-meters { display: grid; gap: 6px; margin: 8px 0; }
+.lab-squeeze-meters label { display: grid; grid-template-columns: minmax(95px, auto) minmax(65px, 1fr); gap: 8px; align-items: center; }
+.lab-squeeze-meters meter { position: relative; width: 100%; height: 10px; appearance: none; }
+.lab-squeeze-meters meter::after { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; border-left: 1px solid var(--lab-ink); }
+.lab-squeeze-meters meter::-webkit-meter-bar { background: #0a1321; border: 1px solid var(--lab-line); border-radius: 3px; }
+.lab-squeeze-meters meter::-webkit-meter-optimum-value { background: var(--lab-blood); }
+.lab-squeeze-meters #lab-hrs-meter::-webkit-meter-optimum-value { background: var(--lab-hrs); }
+#lab-squeeze-strength { display: block; margin: 4px 0 8px; }
+.lab-stage-tools label { display: flex; align-items: center; gap: 4px; font-size: 12px; }
+
+
+.lab-ink-views { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+.lab-ink-panel { position: relative; overflow: hidden; }
+.lab-ink-panel h3 { position: absolute; inset: 9px 10px auto; pointer-events: none; }
+.lab-ink-panel h3 small { margin-left: 5px; color: var(--lab-muted); font-size: 11px; font-weight: 400; }
+.lab-ink-panel canvas { display: block; width: 100%; height: clamp(170px, 31vh, 350px); }
+.lab-ink-panel canvas { touch-action: none; cursor: grab; }
+.lab-ink-panel canvas:active { cursor: grabbing; }
+.lab-ink-panel[data-selected] { border-color: #75af9f; }
+.lab-ink-panel canvas:focus-visible { outline: 2px solid var(--lab-mint); outline-offset: -3px; }
+.lab-ink-views[data-expanded] { grid-template-columns: minmax(0,1fr); }
+.lab-ink-views[data-expanded] .lab-ink-panel:not(.lab-ink-orbit) { display: none; }
+.lab-ink-views[data-expanded] canvas { height: clamp(300px, 62vh, 690px); }
+@media (max-width: 500px) {
+    .lab-ink-panel h3 small { display: block; margin-left: 0; }
+}
+#lab-ink-optical { display: block; margin-top: 8px; }
+#pane-ink #lab-ink-gate[data-on] { color: var(--lab-mint); }
+#pane-lab[data-guided-pose] .lab-comparison:not([data-camera]) .lab-stage { min-height: 260px; }
+
+#learn-results { max-width: 100%; overflow-x: auto; }
+#learn-results th, #learn-results td { padding: 5px 8px; text-align: left; border-bottom: 1px solid var(--border, #41536a); }
+#learn-hold { touch-action: none; }
+.gesture-detection { display: grid; gap: 5px; margin: 10px 0; }
+#learn-last { font-weight: 650; }
+.gesture-detection canvas, .gesture-example-viewer canvas { display: block; width: min(100%, 480px); height: auto; border-radius: 4px; }
+#learn-live-trace[hidden] { display: none; }
+.gesture-axis-key { display: flex; gap: 10px; }
+.gesture-axis-key span:nth-child(1) { color: #41836f; }
+.gesture-axis-key span:nth-child(2) { color: #aa602c; }
+.gesture-axis-key span:nth-child(3) { color: #8068b2; }
+.gesture-row input[type="number"] { width: 6ch; }
+.gesture-row[data-matched] { box-shadow: inset 3px 0 #75af9f; padding-inline-start: 8px; }
+.gesture-example-viewer { flex-basis: 100%; min-width: 0; }
+.gesture-example-viewer select { margin: 6px 0; }
+#lab-last-gesture { display: block; margin-bottom: 5px; }
+
+.gesture-map-link { margin-inline-start: auto; color: var(--lab-mint); font-size: 12px; }
+.gesture-monitor-live { display: grid; gap: 5px; margin: 9px 0; }
+.gesture-monitor-live canvas, .gesture-fingerprints canvas { width: 100%; height: auto; display: block; }
+.gesture-monitor-live canvas { width: min(100%,232px); }
+.gesture-monitor-live meter { width: min(100%,232px); }
+[data-match-state="matched"] .gesture-monitor-status { color: var(--lab-mint) !important; }
+[data-match-state="rejected"] .gesture-monitor-status { color: #f8bd90 !important; }
+.gesture-monitor-controls { justify-content: space-between; margin: 6px 0; }
+.gesture-fingerprint-key { display: flex; gap: 9px; font: 11px ui-monospace, monospace; }
+.gesture-fingerprint-key span:first-child { color: #c3a7ff; }
+.gesture-fingerprint-key span:last-child { color: #96f8d1; }
+.gesture-fingerprints { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(150px,100%),1fr)); gap: 6px; }
+.gesture-fingerprints figure { padding: 5px; margin: 0; border: 1px solid var(--lab-line); border-radius: 4px; min-width: 0; }
+.gesture-fingerprints figure[data-nearest] { border-color: var(--lab-mint); }
+.gesture-fingerprints figcaption { font: 11px ui-monospace, monospace; padding-bottom: 4px; }

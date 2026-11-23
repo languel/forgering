@@ -1,0 +1,140 @@
+[
+  {
+    "id": "r02",
+    "hardware": "RY02_V3.0",
+    "stock": "RY02_3.00.38_250403.bin",
+    "name": "RY02_3.00.38_250403_experimental-40ms.bin",
+    "source": "https://api2.qcwxkjvip.com/download/ota/RY02_V3.0/RY02_3.00.38_250403.bin",
+    "inputHash": "dbf64e3dc9aef112a4d69e46e516efb27f2ed2e3dc1d2d3f1af75939cc46487e",
+    "outputHash": "89f3c9e08015a133a9700c55a4f38aafedd593fa317bfaf44d10f90b50b78762",
+    "changes": [
+      {
+        "offset": 12,
+        "bytes": [
+          20
+        ]
+      },
+      {
+        "offset": 82,
+        "bytes": [
+          1
+        ]
+      },
+      {
+        "offset": 7726,
+        "bytes": [
+          40
+        ]
+      },
+      {
+        "offset": 7730,
+        "bytes": [
+          0,
+          191
+        ]
+      }
+    ]
+  },
+  {
+    "id": "r10",
+    "hardware": "RY03CR_V1.0",
+    "stock": "RY03CR_1.00.06_241212.bin",
+    "name": "RY03CR_1.00.06_T040H1_experimental-40ms.bin",
+    "source": "https://api2.qcwxkjvip.com/download/ota/RY03CR_V1.0/RY03CR_1.00.06_241212.bin",
+    "inputHash": "1633f8e8581af209bae949c4b4b1c19b3511de3606e8785e765629054dce2c62",
+    "outputHash": "88546e22ad72aeefb87028ab9b8fba99e60e32e8a7a1ea7f507179d45d274c39",
+    "changes": [
+      {
+        "offset": 12,
+        "bytes": [
+          80,
+          254,
+          162
+        ]
+      },
+      {
+        "offset": 31,
+        "bytes": [
+          84,
+          48,
+          52,
+          48,
+          72,
+          49
+        ]
+      },
+      {
+        "offset": 452,
+        "bytes": [
+          73,
+          230,
+          17,
+          35,
+          232,
+          3,
+          52,
+          7,
+          123,
+          216,
+          96,
+          175,
+          194,
+          26,
+          31,
+          81,
+          193,
+          15,
+          188,
+          158,
+          141,
+          58,
+          250,
+          47,
+          233,
+          24,
+          163,
+          179,
+          127,
+          24,
+          197,
+          43
+        ]
+      },
+      {
+        "offset": 7416,
+        "bytes": [
+          84,
+          48,
+          52,
+          48,
+          72,
+          49
+        ]
+      },
+      {
+        "offset": 7694,
+        "bytes": [
+          40
+        ]
+      },
+      {
+        "offset": 7698,
+        "bytes": [
+          0,
+          191
+        ]
+      },
+      {
+        "offset": 24887,
+        "bytes": [
+          84,
+          48,
+          52,
+          48,
+          72,
+          49
+        ]
+      }
+    ]
+  }
+]

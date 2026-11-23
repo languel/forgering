@@ -1,0 +1,3128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ring Studio</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f9;
+            color: #333;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: #11b8c4
+        }
+
+        h1 {
+            text-align: center
+        }
+
+        button {
+            background: #11b8c4;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px
+        }
+
+        button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+        button:hover:not(:disabled) {
+            background: #0e9ba5
+        }
+
+        button.active {
+            background: #0a7a82
+        }
+
+        button.history {
+            background: #6c757d;
+            padding: 5px 10px;
+            font-size: 14px
+        }
+
+        #log {
+            border: 1px solid #ccc;
+            overflow-y: auto;
+            height: 200px;
+            background: #fff;
+            padding: 10px;
+            margin-top: 20px;
+            border-radius: 5px;
+            font-family: monospace
+        }
+
+        .debug-container {
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            width: 120px
+        }
+
+        .control-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+            justify-content: flex-start
+        }
+
+        .control-panel button {
+            flex: 0 1 auto
+        }
+
+        .section {
+            margin-bottom: 20px
+        }
+
+        .command-input {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ccc;
+            margin-right: 5px
+        }
+
+        .status-indicator.connected {
+            background: #4CAF50
+        }
+
+        .status-bar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            font-weight: bold
+        }
+
+        .metrics-panel {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: space-between
+        }
+
+        .metric-card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            cursor: pointer;
+            flex: 1;
+            min-width: 100px;
+            max-width: 160px;
+            transition: all 0.2s ease
+        }
+
+        .metric-card:hover {
+            background: #f0f0f0;
+            transform: translateY(-2px)
+        }
+
+        .metric-card:active {
+            transform: translateY(0px);
+            background: #e8e8e8
+        }
+
+        .metric-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 3px
+        }
+
+        .metric-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #11b8c4
+        }
+
+        .metric-unit {
+            font-size: 12px;
+            color: #666;
+            margin-left: 2px
+        }
+
+        .metric-timestamp {
+            font-size: 10px;
+            color: #999;
+            margin-top: 3px
+        }
+
+        .raw-data-panel {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+            background: #fff;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1)
+        }
+
+        .raw-data-item {
+            text-align: center
+        }
+
+        .raw-data-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px
+        }
+
+        .raw-data-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333
+        }
+
+        .interp-panel {
+            margin-top: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px
+        }
+
+        .interp-data {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px
+        }
+
+        .history-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 10px
+        }
+
+        .heart-rate-values {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px
+        }
+
+        .cmd-list {
+            font-size: 14px;
+            color: #666;
+            margin-top: 10px;
+            columns: 2
+        }
+
+        .status-indicator.connecting {
+            background: #FFA500;
+            animation: blink 1s infinite
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0.5
+            }
+        }
+
+        .midi-controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px
+        }
+
+        .midi-controls select {
+            min-width: 150px
+        }
+
+        .midi-mappings table {
+            width: 100%;
+            border-collapse: collapse
+        }
+
+        .midi-mappings th,
+        .midi-mappings td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd
+        }
+
+        .midi-mappings input[type="number"] {
+            width: 60px
+        }
+
+        .log-container {
+            position: relative;
+            margin-top: 10px
+        }
+
+        #log {
+            border: 1px solid #ccc;
+            height: 200px;
+            background: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            overflow-y: auto;
+            margin-bottom: 10px
+        }
+
+        /* Compact classroom workspace */
+        * { box-sizing: border-box; }
+        body { max-width: 1200px; padding: 24px; background: #f3f6f7; color: #24333c; font: 14px/1.45 system-ui, sans-serif; }
+        h1 { text-align: left; color: #163a43; font-size: 26px; margin: 0 0 8px; }
+        h2 { color: #163a43; font-size: 18px; margin: 0 0 10px; }
+        .section { background: white; border: 1px solid #dce7e8; border-radius: 12px; padding: 16px; margin: 12px 0; }
+        button { font: inherit; font-weight: 600; margin: 0; padding: 8px 12px; background: #087c87; }
+        button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #85cbd0; outline-offset: 2px; }
+        input[type=text], input[type=number], select { font: inherit; padding: 6px 8px; border: 1px solid #cbdadd; border-radius: 5px; }
+        .control-panel { gap: 7px; margin: 8px 0; }
+        .metrics-panel { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+        .metric-card { min-width: 0; max-width: none; box-shadow: none; border: 1px solid #e2ebec; }
+        .metric-value { color: #087c87; }
+        .raw-data-panel { box-shadow: none; background: #f6f9f9; padding: 10px; }
+        .midi-controls { flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .midi-mappings { overflow-x: auto; }
+        .midi-mappings table { min-width: 620px; }
+        .midi-mappings th, .midi-mappings td { padding: 6px; }
+        #log { height: 130px; margin-top: 0; font-size: 12px; }
+        .debug-container { border: 0; padding: 0; margin: 0; }
+        .hint { color: #60747a; font-size: 13px; margin: 5px 0 10px; }
+        .signal-controls { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; }
+        .signal-controls label { display: grid; gap: 3px; color: #526a70; font-size: 12px; }
+        .signal-controls input[type=number] { width: 80px; margin: 0; }
+        .signal-controls select { min-width: 90px; }
+        .signal-chart { display: block; width: 100%; height: 150px; background: #f6f9f9; border: 1px solid #e1ebec; border-radius: 8px; margin: 12px 0 4px; }
+        .legend { color: #60747a; font-size: 12px; }
+        .legend b { margin-right: 12px; }
+        .cmd-list { columns: auto; max-height: 180px; overflow: auto; margin: 6px 0; padding: 0; list-style: none; }
+        .cmd-list li[hidden] { display: none; }
+        .cmd-list li { display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1px solid #edf2f2; padding: 4px 0; }
+        .cmd-list button { background: #e8f3f3; color: #155b62; padding: 5px 9px; font-size: 12px; }
+        .command-input input { margin: 0; }
+        details summary { cursor: pointer; font-weight: 600; color: #31565c; margin: 10px 0; }
+        @media (max-width: 650px) { body { padding: 12px; } .metrics-panel { grid-template-columns: repeat(2, 1fr); } .section { padding: 12px; } }
+
+        body { max-width: 1100px; padding: 10px 14px; font-size: 13px; }
+        .toolbar { display: flex; align-items: center; gap: 10px; position: relative; background: #fff; border: 1px solid #dce7e8; border-radius: 9px; padding: 6px 9px; }
+        .brand { color: #087c87; font-size: 20px; line-height: 1; }
+        .status-bar { margin: 0; font-size: 12px; white-space: nowrap; }
+        .toolbar-actions { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+        .icon-button, .toolbar-menu > summary { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; margin: 0; border-radius: 6px; font-size: 18px; line-height: 1; background: #e9f3f3; color: #155b62; cursor: pointer; }
+        .icon-button:hover:not(:disabled), .toolbar-menu > summary:hover { background: #d3ebea; color: #104e54; }
+        .icon-button.active { background: #087c87; color: white; }
+        .toolbar-menu { position: relative; }
+        .toolbar-menu > summary { list-style: none; font-weight: 700; }
+        .toolbar-menu > summary::-webkit-details-marker { display: none; }
+        .menu-panel { position: absolute; z-index: 10; right: 0; top: 38px; width: min(390px, calc(100vw - 30px)); background: white; border: 1px solid #d5e3e4; box-shadow: 0 8px 24px #183e4824; border-radius: 8px; padding: 12px; }
+        .menu-panel p { margin: 8px 0; }
+        .log-actions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+        .log-actions button { font-size: 12px; padding: 5px 8px; }
+        .history-panel { margin: 0; }
+        .history-panel:empty { display: none; }
+        button.history { font-size: 11px; padding: 5px 7px; }
+        .section { padding: 10px 12px; margin: 7px 0; border-radius: 9px; }
+        h2 { font-size: 14px; margin: 0 0 6px; }
+        .metrics-panel { gap: 6px; margin: 0; }
+        .metric-card { padding: 6px; }
+        .metric-value { font-size: 17px; }
+        .metric-timestamp { font-size: 10px; }
+        .raw-data-panel { margin-top: 6px; padding: 7px; gap: 5px; }
+        .raw-data-label { margin-bottom: 1px; font-size: 12px; }
+        .raw-data-value { font-size: 14px; }
+        .signal-chart { height: 115px; margin: 7px 0 2px; }
+        .hint { margin: 3px 0 6px; font-size: 12px; }
+        .collapsible > summary { margin: 0; font-size: 14px; }
+        .collapsible[open] > summary { margin-bottom: 8px; }
+        @media (max-width: 650px) { .toolbar { flex-wrap: wrap; } .history-panel { width: 100%; } .metrics-panel { grid-template-columns: repeat(5, minmax(0, 1fr)); } .metric-value { font-size: 14px; } .metric-unit { display: none; } }
+
+        .stream-toolbar { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:8px; }
+        .stream-toolbar label { display: inline-flex; align-items: center; gap: 6px; }
+        #interp-interval { width: 5rem; }
+        .stream-toolbar button { padding:3px 8px; font-size:11px; background:#e8f3f3; color:#155b62; }
+        .stream-controls { display:flex; flex-wrap:wrap; gap:4px; margin:5px 0; }
+        .stream-chip { display:inline-flex; align-items:center; gap:4px; padding:3px 6px; border:1px solid #e1ebec; border-radius:5px; font-size:11px; }
+        .plot-layout { display:grid; grid-template-columns:minmax(0,1fr) 11rem; gap:8px; align-items:start; }
+        .plot-layout .stream-controls { flex-direction:column; }
+        .plot-layout .stream-chip small { margin-left:auto; width:9ch; flex:none; text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
+        @media (max-width:480px) {
+            .plot-layout { grid-template-columns:minmax(0,1fr); gap:0; }
+            .plot-layout .stream-controls { flex-direction:row; }
+        }
+        .stream-chip input { margin:0; }
+        .stream-chip small { color:#718388; font-size:10px; }
+        .signal-chart { height:150px; }
+
+        :root {
+            color-scheme: light;
+            --page: #eef0f1;
+            --surface: #fafbfc;
+            --inset: #f1f3f5;
+            --text: #273039;
+            --muted: #54606b;
+            --border: #cdd3d9;
+            --accent: #596b7c;
+            --accent-hover: #465767;
+            --button-text: #fff;
+            --soft: #e4e9ed;
+            --focus: #68869e;
+        }
+        :root[data-theme="dark"] {
+            color-scheme: dark;
+            --page: #191c20;
+            --surface: #23272c;
+            --inset: #1c2025;
+            --text: #e5e9ed;
+            --muted: #adb8c2;
+            --border: #444d56;
+            --accent: #a7b7c5;
+            --accent-hover: #c4d0d9;
+            --button-text: #1a2026;
+            --soft: #343d45;
+            --focus: #9eb8ce;
+        }
+        body { background: var(--page); color: var(--text); }
+        .section, .toolbar, .metric-card, .debug-container, .raw-data-panel, .interp-panel {
+            background: transparent;
+            border: 0;
+            border-radius: 0;
+        }
+        .toolbar { padding: 3px 0 6px; }
+        .section { padding: 8px 0; margin: 0; }
+        .section + .section { border-top: 1px solid var(--border); }
+        .menu-panel { background: var(--surface); border-color: var(--border); border-radius: 2px; box-shadow: none; }
+        .metric-card { padding: 4px 6px; text-align: left; }
+        .metric-card:hover, .metric-card:active { transform: none; }
+        .metric-card + .metric-card { border-inline-start: 1px solid var(--border); }
+        .raw-data-panel, .interp-panel { box-shadow: none; padding: 4px 0; }
+        main section[aria-label] + section[aria-label] { margin-top: 8px; }
+        .signal-chart, #log { border: 0; border-radius: 0; }
+        .signal-chart { margin: 4px 0 0; }
+        .stream-controls { gap: 1px 6px; margin: 4px 0 0; }
+        .stream-chip { border: 0; border-radius: 0; padding: 2px 0; }
+        .midi-controls { gap: 6px; margin-bottom: 6px; }
+        .midi-mappings th, .midi-mappings td { padding: 3px 6px; }
+        .signal-chart, #log { background: var(--inset); }
+        h1, h2, h3, details summary, .raw-data-value { color: var(--text); }
+        .hint, .signal-controls label, .raw-data-label, .metric-label, .metric-unit,
+        .metric-timestamp, .stream-chip small, .cmd-list { color: var(--muted); }
+        .metric-value, .brand { color: var(--accent); }
+        button, button.history, .icon-button.active { background: var(--accent); color: var(--button-text); }
+        button:hover:not(:disabled) { background: var(--accent-hover); }
+        .icon-button, .toolbar-menu > summary, .stream-toolbar button, .cmd-list button { background: var(--soft); color: var(--text); }
+        .icon-button:hover:not(:disabled), .toolbar-menu > summary:hover, .stream-toolbar button:hover, .cmd-list button:hover { background: var(--border); color: var(--text); }
+        .icon-button.active, .icon-button.active:hover:not(:disabled) { background: var(--accent); color: var(--button-text); }
+        button, .icon-button, .toolbar-menu > summary { border-radius: 2px; }
+        button { padding: 4px 8px; }
+        .icon-button, .toolbar-menu > summary { height: 28px; }
+        input, select { accent-color: var(--accent); }
+        input[type=text], input[type=number], input[type=search], select { background: var(--inset); color: var(--text); border: 1px solid var(--border); border-radius: 2px; padding: 3px 6px; }
+        :is(button, input, select, summary):focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+        .cmd-list li, .stream-chip, .midi-mappings th, .midi-mappings td { border-color: var(--border); }
+        .metric-card:hover, .metric-card:active, .metric-card.active { background: var(--soft); }
+        .stream-chip span { color: var(--text); border-inline-start: 2px solid var(--stream-color); padding-inline-start: 4px; }
+        .status-indicator { background: var(--border); }
+        .status-indicator.connected { background: #789583; }
+        .status-indicator.connecting { background: #a99a73; }
+
+        .collapsible > summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            list-style: none;
+        }
+        .collapsible > summary::-webkit-details-marker { display: none; }
+        .disclosure-action { font-size: 12px; color: var(--muted); }
+        .disclosure-action::after { content: "Expand +"; }
+        .collapsible[open] > summary .disclosure-action::after { content: "Collapse −"; }
+        .metrics-panel { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 0; }
+        .activity-history-scroll { max-height: 220px; overflow: auto; }
+        .activity-history-scroll th, .activity-history-scroll td { text-align: right; padding: 3px 12px; }
+        #heart-toggle, #activity-toggle { padding: 2px 6px; font-size: 11px; }
+        [hidden] { display: none !important; }
+        body { max-width: 1180px; padding-bottom: 0; min-height: calc(100dvh - 10px); box-sizing: border-box; display: flex; flex-direction: column; }
+        main { flex: 1 0 auto; margin-bottom: .4rem; }
+        .studio-tabs, .studio-row { display: flex; align-items: center; flex-wrap: wrap; gap: .65rem; }
+        .studio-tabs { border-bottom: 1px solid var(--border); margin: 4px 0 .35rem; gap: 4px; }
+        .studio-tabs button { background: transparent; color: var(--muted); border-radius: 0; padding: 4px 10px; line-height: 16px; }
+        .studio-tabs button:hover:not(:disabled) { background: var(--soft); color: var(--text); }
+        .studio-tabs button[aria-pressed="true"] { color: var(--text); background: transparent; box-shadow: inset 0 -2px var(--accent); }
+        .studio-row { margin: .35rem 0; gap: .45rem; }
+        .studio-row h2 { margin: 0 auto 0 0; }
+        .toolbar button:is(#connectButton, #rebootButton) { width: auto; padding-inline: .75rem; font-size: inherit; }
+        .brand { font-weight: 700; letter-spacing: -.04em; white-space: nowrap; }
+        #system-log { position: sticky; bottom: 0; z-index: 3; margin: 0; border-top: 1px solid var(--border); background: var(--page); max-height: 48vh; overflow: auto; }
+        #system-log .log-container { margin-top: .35rem; }
+        .log-toolbar { margin-bottom: 0; }
+        #log-copy-status { color: var(--muted); }
+        #system-log #log { height: min(150px, 22vh); }
+        #system-log .section { margin: .35rem 0 0; border-top: 1px solid var(--border); }
+        #system-log .command-input { margin-top: .6rem; }
+        #system-log .command-input input { width: 8rem; }
+        #system-log .command-input label { white-space: nowrap; }
+        .gesture-list { display: grid; margin: .45rem 0; }
+        .gesture-row { border-top: 1px solid var(--border); padding: .45rem 0; margin: 0; }
+        .gesture-row strong { min-width: 9rem; overflow-wrap: anywhere; }
+        #firmware-image, #firmware-mismatch, #firmware-version-check { display: block; overflow-wrap: anywhere; }
+        #firmware-mismatch { color: var(--text); }
+        #firmware-mismatch:empty, #firmware-version-check:empty { display: none; }
+        .firmware-fields { max-width: 760px; }
+        .firmware-row {
+            display: grid;
+            grid-template-columns: 3.5rem minmax(0, 1fr) 8rem;
+            align-items: center;
+            gap: 8px;
+            min-height: 36px;
+            padding: 4px 0;
+        }
+        .firmware-row > :is(output, select) { min-width: 0; overflow-wrap: anywhere; }
+        .firmware-row > button { min-height: 28px; }
+        .firmware-label { color: var(--muted); font-weight: 600; }
+        .firmware-upload { border-top: 1px solid var(--border); margin-top: 5px; padding-top: 8px; }
+        .firmware-meter { display: flex; align-items: center; gap: 8px; }
+        #firmware-progress {
+            appearance: none;
+            width: 100%;
+            min-width: 0;
+            height: 12px;
+            border: 0;
+            background: var(--soft);
+        }
+        #firmware-progress::-webkit-progress-bar { background: var(--soft); }
+        #firmware-progress::-webkit-progress-value { background: var(--accent); }
+        #firmware-progress::-moz-progress-bar { background: var(--accent); }
+        #firmware-percent { flex: 0 0 4ch; text-align: right; font-variant-numeric: tabular-nums; }
+        .firmware-feedback { padding-inline-start: calc(3.5rem + 8px); }
+        .firmware-feedback output { display: block; overflow-wrap: anywhere; }
+        .firmware-feedback output:empty { display: none; }
+        @media (max-width: 460px) {
+            .firmware-row { grid-template-columns: 3rem minmax(0, 1fr) 7rem; gap: 6px; }
+            .firmware-feedback { padding-inline-start: 0; }
+        }
+        .midi-mappings { overflow-x: auto; }
+        #signal-status:empty, #record-probe:empty, #record-count:empty { display: none; }
+        @media (max-width: 620px) {
+            body { padding: 10px 10px 0; }
+            .toolbar { flex-wrap: wrap; }
+            .metric-card + .metric-card { border-inline-start: 0; }
+            .studio-row input[type=file] { max-width: 100%; }
+        }
+    </style>
+    <link rel="stylesheet" href="ring-lab.css">
+</head>
+
+<body>
+    <header class="toolbar" aria-label="Ring controls">
+        <div class="brand">Ring Studio</div>
+        <div class="status-bar"><span class="status-indicator" id="status-indicator"></span><span id="connection-status">Disconnected</span></div>
+        <div class="toolbar-actions">
+            <button class="icon-button" id="connectButton" title="Connect ring" aria-label="Connect ring">Connect</button>
+            <button class="icon-button" id="rebootButton" type="button" title="Restart the connected ring" disabled>Reboot</button>
+            <button class="icon-button" id="theme-toggle" type="button" title="Dark mode" aria-label="Dark mode" aria-pressed="false">☾</button>
+            <details class="toolbar-menu"><summary title="Help" aria-label="Help">?</summary>
+                <div class="menu-panel help-menu"><strong>Ring Studio Help</strong>
+                    <p><b>Stream</b> — Connect in Chrome, then start the raw stream. Reboot restarts the connected ring. Use Connect again after it restarts. Click a metric to request a reading. Solid traces are raw, dashed are smoothed and dotted are interpolated. The rate next to Accelerometer counts incoming packets and changes in XYZ separately. Stop the stream before toggling Ring gestures to compare it with the raw-only stream.</p>
+                    <p><b>Mapping</b> — Set the MIDI output and channel. Motion input ranges map to MIDI 0–127. To teach a gesture, add a name and record at least two examples with the ring in the same orientation. Perform each gesture once during the recording window, returning to rest between examples. Enable recognition and assign a note or CC.</p>
+                    <p><b>Firmware</b> — Stage an image, verify the connected hardware, and confirm Flash. Keep the ring charged and nearby until it restarts. Reconnect to verify the reported firmware. Experimental images may prevent normal operation.</p>
+                    <p><b>Log &amp; commands</b> — Settings sends a checksummed packet of up to 15 bytes. Framed sends one command byte with optional data. Use loads a catalog command into the editor.</p>
+                </div>
+            </details>
+        </div>
+    </header>
+    <nav class="studio-tabs" aria-label="Workspace">
+        <button type="button" data-pane="stream" aria-pressed="true" title="Live metrics, traces and stored records">Stream</button>
+        <button type="button" data-pane="mapping" aria-pressed="false" title="MIDI routing and learned gestures">Mapping</button>
+        <button type="button" data-pane="lab" aria-pressed="false">Gesture Lab</button>
+        <button type="button" data-pane="ink" aria-pressed="false">Ink</button>
+        <button type="button" data-pane="firmware" aria-pressed="false" title="Inspect and update ring firmware">Firmware</button>
+    </nav>
+    <main>
+    <div id="pane-stream">
+
+    <div class="section">
+        <h2>Metrics</h2>
+        <div class="metrics-panel">
+            <div class="metric-card" id="battery-card">
+                <div class="metric-label">Battery</div>
+                <div class="metric-value">
+                    <span id="battery-value">--</span>
+                    <span class="metric-unit">%</span>
+                </div>
+                <div class="metric-timestamp" id="battery-time">--</div>
+            </div>
+            <div class="metric-card" id="heart-rate-card">
+                <div class="metric-label">Heart Rate</div><button type="button" id="heart-toggle" aria-pressed="false">Start BPM</button>
+                <div class="metric-value">
+                    <span id="heart-rate-value">--</span>
+                    <span class="metric-unit">bpm</span>
+                </div>
+                <div class="metric-timestamp" id="heart-rate-time">--</div>
+            </div>
+            <div class="metric-card" id="steps-card" title="Toggle activity polling every 5 seconds">
+                <div class="metric-label">Steps</div><button type="button" id="activity-toggle" aria-pressed="false">Start activity</button>
+                <div class="metric-value" id="steps-value">--</div>
+                <div class="metric-timestamp" id="steps-time">--</div>
+            </div>
+            <div class="metric-card" id="calories-card">
+                <div class="metric-label">Calories</div>
+                <div class="metric-value">
+                    <span id="calories-value">--</span>
+                    <span class="metric-unit">kcal</span>
+                </div>
+                <div class="metric-timestamp" id="calories-time">--</div>
+            </div>
+            <div class="metric-card" id="distance-card">
+                <div class="metric-label">Distance</div>
+                <div class="metric-value">
+                    <span id="distance-value">--</span>
+                    <span class="metric-unit">m</span>
+                </div>
+                <div class="metric-timestamp" id="distance-time">--</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section" id="raw-data-section">
+        <div class="studio-row"><h2>Stream</h2>
+            <button id="toggleDataButton" title="Start raw data and gesture monitoring" aria-pressed="false">Start stream</button>
+            <button id="clearMonitoringButton" title="Clear live plots">Clear</button>
+            <label title="Enable the ring’s built-in camera gesture mode with the raw stream"><input id="stream-ring-gestures" type="checkbox" checked> Ring gestures</label>
+        </div>
+
+        <div class="stream-toolbar">
+            <label>Time window <select id="plot-window">
+                <option value="2">2 s</option><option value="5">5 s</option><option value="10">10 s</option>
+                <option value="30">30 s</option><option value="60">60 s</option><option value="120" selected>120 s</option>
+            </select></label>
+            <label>Interpolation interval (ms)
+                <input type="number" id="interp-interval" value="1000" min="10" max="10000" step="10">
+            </label>
+            <button type="button" id="streams-all">All</button>
+            <button type="button" id="streams-none">None</button>
+        </div>
+        <section aria-label="Accelerometer plot">
+            <div class="studio-row"><strong title="Raw solid · Smoothed dashed · Interpolated dotted">Accelerometer (g)</strong>
+                <output id="accel-packet-rate" title="Ten-second rate of incoming accelerometer notifications and changes in the raw XYZ values">—</output></div>
+            <div class="plot-layout">
+                <canvas class="signal-chart" id="accel-chart" width="1000" height="150" aria-label="Accelerometer X, Y and Z"></canvas>
+                <div id="accel-streams" class="stream-controls" aria-label="Accelerometer traces"></div>
+            </div>
+            <details class="collapsible">
+                <summary>Raw and interpolated axes</summary>
+
+        <div class="raw-data-panel">
+            <div class="raw-data-item">
+                <div class="raw-data-label">X-Axis</div>
+                <div class="raw-data-value">
+                    <span id="raw-x">--</span>
+                    (<span id="interp-x">--</span>)
+                </div>
+            </div>
+            <div class="raw-data-item">
+                <div class="raw-data-label">Y-Axis</div>
+                <div class="raw-data-value">
+                    <span id="raw-y">--</span>
+                    (<span id="interp-y">--</span>)
+                </div>
+            </div>
+            <div class="raw-data-item">
+                <div class="raw-data-label">Z-Axis</div>
+                <div class="raw-data-value">
+                    <span id="raw-z">--</span>
+                    (<span id="interp-z">--</span>)
+                </div>
+            </div>
+            <div class="raw-data-item">
+                <div class="raw-data-label">X-Axis (G)</div>
+                <div class="raw-data-value" id="raw-x-g">--</div>
+            </div>
+            <div class="raw-data-item">
+                <div class="raw-data-label">Y-Axis (G)</div>
+                <div class="raw-data-value" id="raw-y-g">--</div>
+            </div>
+            <div class="raw-data-item">
+                <div class="raw-data-label">Z-Axis (G)</div>
+                <div class="raw-data-value" id="raw-z-g">--</div>
+            </div>
+        </div>
+            </details>
+        </section>
+        <section aria-label="Blood plot">
+            <strong>Blood</strong>
+            <div class="plot-layout">
+                <canvas class="signal-chart" id="blood-chart" width="1000" height="150" aria-label="Blood raw, reported max and visible raw minimum"></canvas>
+                <div id="blood-streams" class="stream-controls" aria-label="Blood traces"><small id="blood-visible-min"></small></div>
+            </div>
+
+        </section>
+        <section aria-label="HRS plot">
+            <strong>HRS</strong>
+            <div class="plot-layout">
+                <canvas class="signal-chart" id="hrs-chart" width="1000" height="150" aria-label="HRS raw, max, min and difference"></canvas>
+                <div id="hrs-streams" class="stream-controls" aria-label="HRS traces"></div>
+            </div>
+        </section>
+        <section aria-label="Gesture events">
+            <strong>Gesture events</strong>
+
+            <output id="gesture-last" class="hint">No gesture received</output>
+            <div class="plot-layout">
+                <canvas class="signal-chart" id="gesture-chart" width="1000" height="150" aria-label="Reported gesture codes over time"></canvas>
+                <div id="gesture-streams" class="stream-controls" aria-label="Gesture traces"></div>
+            </div>
+        </section>
+        <details class="collapsible">
+            <summary>Other signals</summary>
+            <div class="plot-layout">
+                <canvas class="signal-chart" id="other-chart" width="1000" height="150" aria-label="Other selected signals"></canvas>
+                <div id="other-streams" class="stream-controls" aria-label="Other signals traces"></div>
+            </div>
+        </details>
+
+    </div>
+
+    <details class="section collapsible" id="stored-records">
+        <summary><span>Stored records</span><span class="disclosure-action" aria-hidden="true"></span></summary>
+        <div class="log-actions"><button id="getHeartHistoryButton">Heart rate</button><button id="getStepHistoryButton">Steps</button><button id="getSpo2HistoryButton">SpO2</button><button id="getSportHistoryButton">Sport</button></div>
+        <div class="signal-controls">
+            <label>Series <select id="record-series">
+                <option value="heart">Heart rate (bpm)</option><option value="spo2">SpO₂ (%)</option>
+                <option value="steps" selected>Steps</option><option value="calories">Calories (kcal)</option>
+                <option value="distance">Distance (m)</option><option value="sport">Sport duration (min)</option>
+            </select></label>
+            <label>From <input type="date" id="record-from"></label>
+            <label>Through <input type="date" id="record-through"></label>
+        </div>
+        <p class="hint" id="record-probe"></p>
+        <canvas class="signal-chart" id="record-chart" width="1000" height="180" aria-label="Stored values by time"></canvas>
+        <output class="hint" id="record-count"></output>
+        <div class="activity-history-scroll">
+            <table><thead><tr><th>Local time</th><th>Value</th><th>Source</th></tr></thead><tbody id="record-rows"></tbody></table>
+        </div>
+    </details>
+    </div>
+    <div id="pane-mapping" hidden>
+    <section class="section" id="midi-section">
+        <h2>MIDI mapping</h2>
+        <div class="debug-container">
+            <div class="midi-controls">
+                <label for="midi-output">MIDI Output:</label>
+                <select id="midi-output">
+                    <option value="none">No device</option>
+                </select>
+                <label for="midi-channel">MIDI Channel:</label>
+                <select id="midi-channel">
+                    <option value="0" selected>Channel 1</option>
+                    <option value="1">Channel 2</option>
+                    <option value="2">Channel 3</option>
+                    <option value="3">Channel 4</option>
+                    <option value="4">Channel 5</option>
+                    <option value="5">Channel 6</option>
+                    <option value="6">Channel 7</option>
+                    <option value="7">Channel 8</option>
+                    <option value="8">Channel 9</option>
+                    <option value="9">Channel 10</option>
+                    <option value="10">Channel 11</option>
+                    <option value="11">Channel 12</option>
+                    <option value="12">Channel 13</option>
+                    <option value="13">Channel 14</option>
+                    <option value="14">Channel 15</option>
+                    <option value="15">Channel 16</option>
+                </select>
+            </div>
+            <div title="Acceleration range maps to MIDI values 0–127"><div class="signal-controls">
+            <label>Axis<select id="signal-axis"><option value="x">X</option><option value="y">Y</option><option value="z">Z</option></select></label>
+            <label>Input min (G)<input id="signal-min" type="number" step="0.1" value="-4"></label>
+            <label>Input max (G)<input id="signal-max" type="number" step="0.1" value="4"></label>
+            <label>Smoothing <span id="smooth-label">Off</span><input id="signal-smoothing" type="range" min="0" max="90" step="10" value="0"></label>
+        </div>
+        <p class="hint" id="signal-status" aria-live="polite"></p></div>
+            <div class="midi-mappings">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Data</th>
+                            <th>MIDI Value</th>
+                            <th>MIDI Event</th>
+                            <th>CC/Note #</th>
+                            <th>Interpolate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Accel X (G)</td>
+                            <td id="midi-x-data">--</td>
+                            <td id="midi-x-value">0</td>
+                            <td>
+                                <select id="midi-x-type">
+                                    <option value="cc">CC</option>
+                                    <option value="note">Note</option>
+                                </select>
+                            </td>
+                            <td><input type="number" id="midi-x-cc" min="0" max="127" value="20"></td>
+                            <td><input type="checkbox" id="midi-x-interp" checked></td>
+                        </tr>
+                        <tr>
+                            <td>Accel Y (G)</td>
+                            <td id="midi-y-data">--</td>
+                            <td id="midi-y-value">0</td>
+                            <td>
+                                <select id="midi-y-type">
+                                    <option value="cc">CC</option>
+                                    <option value="note">Note</option>
+                                </select>
+                            </td>
+                            <td><input type="number" id="midi-y-cc" min="0" max="127" value="21"></td>
+                            <td><input type="checkbox" id="midi-y-interp" checked></td>
+                        </tr>
+                        <tr>
+                            <td>Accel Z (G)</td>
+                            <td id="midi-z-data">--</td>
+                            <td id="midi-z-value">0</td>
+                            <td>
+                                <select id="midi-z-type">
+                                    <option value="cc">CC</option>
+                                    <option value="note">Note</option>
+                                </select>
+                            </td>
+                            <td><input type="number" id="midi-z-cc" min="0" max="127" value="22"></td>
+                            <td><input type="checkbox" id="midi-z-interp" checked></td>
+                        </tr>
+                        <tr>
+                            <td>Heart Rate</td>
+                            <td id="midi-hr-data">--</td>
+                            <td id="midi-hr-value">0</td>
+                            <td>
+                                <select id="midi-hr-type">
+                                    <option value="cc">CC</option>
+                                    <option value="note">Note</option>
+                                </select>
+                            </td>
+                            <td><input type="number" id="midi-hr-cc" min="0" max="127" value="23"></td>
+                            <td><input type="checkbox" id="midi-hr-interp" checked></td>
+                        </tr>
+                        <tr>
+                            <td>Other ring gestures</td>
+                            <td id="midi-gesture-data">--</td>
+                            <td id="midi-gesture-value">0</td>
+                            <td>
+                                <select id="midi-gesture-type">
+                                    <option value="cc">CC</option>
+                                    <option value="note" selected>Note</option>
+                                </select>
+                            </td>
+                            <td><input type="number" id="midi-gesture-cc" min="0" max="127" value="24"></td>
+                            <td><input type="checkbox" id="midi-gesture-interp"></td>
+                        </tr>
+                        <tr>
+                            <td>Steps</td>
+                            <td id="midi-steps-data">--</td>
+                            <td id="midi-steps-value">0</td>
+                            <td>
+                                <select id="midi-steps-type">
+                                    <option value="cc">CC</option>
+                                    <option value="note" selected>Note</option>
+                                </select>
+                            </td>
+                            <td><input type="number" id="midi-steps-cc" min="0" max="127" value="25"></td>
+                            <td><input type="checkbox" id="midi-steps-interp"></td>
+                        </tr>
+                        <tr>
+                            <td>Calories</td>
+                            <td id="midi-calories-data">--</td>
+                            <td id="midi-calories-value">0</td>
+                            <td>
+                                <select id="midi-calories-type">
+                                    <option value="cc">CC</option>
+                                    <option value="note" selected>Note</option>
+                                </select>
+                            </td>
+                            <td><input type="number" id="midi-calories-cc" min="0" max="127" value="26"></td>
+                            <td><input type="checkbox" id="midi-calories-interp"></td>
+                        </tr>
+                        <tr>
+                            <td>Distance</td>
+                            <td id="midi-distance-data">--</td>
+                            <td id="midi-distance-value">0</td>
+                            <td>
+                                <select id="midi-distance-type">
+                                    <option value="cc">CC</option>
+                                    <option value="note" selected>Note</option>
+                                </select>
+                            </td>
+                            <td><input type="number" id="midi-distance-cc" min="0" max="127" value="27"></td>
+                            <td><input type="checkbox" id="midi-distance-interp"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+        <section class="section" id="learned-gestures">
+            <h2>Gesture map</h2>
+            <div id="learn-builtins" class="gesture-list"></div>
+            <p class="hint">Disable a gesture to suppress its mapped events. The optical squeeze can still mark training examples and draw ink.</p>
+            <h3>Learned gestures</h3>
+            <form id="gesture-form" class="studio-row">
+                <label>Gesture name <input id="learn-name" required maxlength="40" type="text" title="Name for a new learned gesture"></label>
+                <button>Add gesture</button>
+                <label><input type="checkbox" id="learn-enabled" title="Recognize saved motion examples during streaming"> Recognition</label>
+            </form>
+            <div class="studio-row">
+                <label>Gesture boundary
+                    <select id="learn-boundary">
+                        <option value="motion">Automatic motion</option>
+                        <option value="hold">Hold to mark</option>
+                        <option value="squeeze">Squeeze</option>
+                    </select>
+                </label>
+                <button id="learn-hold" type="button" hidden>Hold to mark (Space)</button>
+                <button id="learn-cancel" type="button" hidden>Cancel recording</button>
+                <button id="learn-evaluate" type="button">Evaluate catalog</button>
+                <button id="learn-audio" type="button" aria-pressed="false">Enable synth audio</button>
+            </div>
+            <p class="hint">Record 3–5 examples of each gesture. Start from a similar ring orientation each time.</p>
+            <div class="gesture-detection">
+                <output id="learn-last" aria-live="polite">No gesture detected yet</output>
+                <canvas id="learn-live-trace" width="480" height="94" aria-label="Latest attempted gesture acceleration traces" hidden></canvas>
+                <small class="gesture-axis-key"><span>X</span><span>Y</span><span>Z</span></small>
+            </div>
+            <div class="gesture-list" id="learn-list"></div>
+            <output id="learn-status" aria-live="polite"></output>
+            <div id="learn-results" hidden></div>
+        </section>
+    </div>
+    <div id="pane-lab" hidden>
+        <div class="lab-heading"><h2>Gesture Lab</h2><output id="lab-device"></output></div>
+        <div class="lab-workspace">
+            <div class="lab-visual">
+            <div class="lab-comparison" id="lab-comparison">
+            <section class="lab-panel lab-stage" aria-label="3D ring visualizer">
+                <canvas id="lab-ring" aria-label="3D ring and tilt"></canvas>
+                <div class="lab-stage-tools">
+                    <output id="lab-source">Waiting for ring</output>
+                    <button id="lab-stream" type="button" disabled>Start stream</button>
+                    <button id="lab-demo" type="button" aria-pressed="false">Demo</button>
+                    <button id="lab-center" type="button">Recenter</button>
+                    <button id="lab-open-ink" type="button">Open Ink</button>
+                </div>
+                <div class="lab-stage-readouts">
+                    <output id="lab-tilt">Tilt —</output>
+                    <output id="lab-motion">XYZ —</output>
+                </div>
+            </section>
+            <section class="lab-panel lab-camera-panel" id="lab-camera-panel" aria-label="Live webcam" hidden>
+                <video id="lab-webcam" autoplay muted playsinline aria-label="Live webcam preview"></video>
+                <canvas id="lab-hand-overlay" aria-hidden="true" hidden></canvas>
+                <div id="lab-guide-overlay" class="lab-guide-overlay" hidden>
+                    <div class="lab-guide-key"><span>Your hand</span><span>Target</span></div>
+                    <div class="lab-guide-instruction">
+                        <output id="lab-guide-cue"></output>
+                        <progress id="lab-guided-progress" max="1" value="0" aria-label="Steady pose capture"></progress>
+                    </div>
+                </div>
+                <label class="lab-mirror"><input id="lab-mirror" type="checkbox" checked> Mirror</label>
+            </section>
+            </div>
+            <section class="lab-panel lab-pose-panel" aria-labelledby="lab-pose-heading">
+                <div class="lab-line">
+                    <h3 id="lab-pose-heading">Pose calibration</h3>
+                    <button id="lab-camera" type="button" aria-pressed="false">Start camera</button>
+                    <button id="lab-guided" type="button">Guided calibration</button>
+                    <output id="lab-camera-status" aria-live="polite"></output>
+                </div>
+                <div id="lab-guided-panel" class="lab-guided-panel" hidden>
+                    <div class="lab-line"><output id="lab-guided-step" aria-live="polite"></output></div>
+                    <div class="lab-line">
+                        <output id="lab-guided-status" aria-live="polite"></output>
+                        <button id="lab-skip-thumb" type="button" hidden>Skip thumb-up pose</button>
+                    </div>
+                </div>
+                <div class="lab-line lab-pose-actions">
+                    <button id="lab-right" type="button" disabled>Mark right tilt</button>
+                    <button id="lab-reset-pose" type="button">Reset pose</button>
+                    <output id="lab-pose-status" aria-live="polite">Hold still at neutral and click Recenter.</output>
+                </div>
+                <div class="lab-controls">
+                    <label>Motion scale <input id="lab-pose-scale" type="number" min="0.25" max="3" step="0.05" value="1"></label>
+                    <label class="lab-manual-pose">Rest pitch (°) <input id="lab-rest-pitch" type="number" min="-180" max="180" step="1" value="41"></label>
+                    <label class="lab-manual-pose">Rest turn (°) <input id="lab-rest-turn" type="number" min="-180" max="180" step="1" value="-31"></label>
+                    <label class="lab-manual-pose">Rest roll (°) <input id="lab-rest-roll" type="number" min="-180" max="180" step="1" value="-21"></label>
+                    <label class="lab-manual-pose lab-pose-flip"><input id="lab-flip-right" type="checkbox"> Flip left/right</label>
+                    <label class="lab-manual-pose lab-pose-flip"><input id="lab-flip-up" type="checkbox"> Flip up/down</label>
+                    <label class="lab-pose-flip"><input id="lab-hand" type="checkbox" checked> Reference hand</label>
+                    <label id="lab-clock-label" hidden>Marker clock (°) <input id="lab-clock" type="number" min="-180" max="180" step="1" value="0"></label>
+                </div>
+            </section>
+            </div>
+            <div class="lab-panel lab-signals">
+                <section aria-labelledby="lab-squeeze-heading">
+                    <div class="lab-line"><h3 id="lab-squeeze-heading">Squeeze</h3><output id="lab-gate">Gate off</output></div>
+                    <canvas id="lab-optical" class="lab-trace" aria-label="Blood raw and HRS raw over the last five seconds"></canvas>
+                    <div class="lab-squeeze-meters">
+                        <label><output id="lab-blood-read">Blood raw —</output><meter id="lab-blood-meter" min="0" max="2" value="0" aria-label="Blood spike relative to its squeeze threshold"></meter></label>
+                        <label><output id="lab-hrs-read">HRS raw —</output><meter id="lab-hrs-meter" min="0" max="2" value="0" aria-label="HRS spike relative to its squeeze threshold"></meter></label>
+                    </div>
+                    <output id="lab-squeeze-strength">Calibrate rest to measure squeeze strength.</output>
+                    <div class="lab-line">
+                        <button type="button" id="lab-calibrate">Calibrate rest</button>
+                        <output id="lab-cal-status" aria-live="polite">Rest your hand before calibrating.</output>
+                    </div>
+                    <div class="lab-controls">
+                        <label>Blood Δ<input id="lab-blood" type="number" min="1" max="32767" value="200"></label>
+                        <label>HRS Δ<input id="lab-hrs" type="number" min="1" max="32767" value="200"></label>
+                        <label>Optical timeout (ms)<input id="lab-window" type="number" min="80" max="5000" step="20" value="1400"></label>
+                    </div>
+                </section>
+                <section aria-labelledby="lab-flick-heading">
+                    <div class="lab-line"><h3 id="lab-flick-heading">Directional flick</h3><output id="lab-flick-event">—</output></div>
+                    <canvas id="lab-impulse" class="lab-trace" aria-label="Acceleration impulse by axis over the last five seconds"></canvas>
+                    <div class="lab-controls">
+                        <label>Threshold (g)<input id="lab-flick" type="number" min="0.05" max="8" step="0.05" value="0.65"></label>
+                        <output id="lab-flick-live">Impulse —</output>
+                        <span class="lab-axis-key" aria-label="Trace colors, X mint, Y orange, Z lavender"><b>X</b><b>Y</b><b>Z</b></span>
+                    </div>
+                </section>
+            </div>
+        </div>
+        <section class="lab-panel lab-strip" data-gesture-monitor aria-label="Gesture monitor"></section>
+        <section class="lab-panel lab-strip">
+            <div class="lab-line"><h3>Test synth</h3><button type="button" id="lab-audio" aria-pressed="false">Enable audio</button><button type="button" id="lab-note">Test note</button><output id="lab-voice" aria-live="polite">Audio off</output></div>
+            <div class="lab-controls">
+                <button id="lab-gesture-map" type="button">Gesture map</button>
+                <label>Gate source<select id="lab-synth-gate"><option value="squeeze">Squeeze</option><option value="manual">Test note only</option></select></label>
+                <label>Pitch source<select id="lab-pitch"></select></label>
+                <label>Filter source<select id="lab-filter"></select></label>
+                <label>Wave<select id="lab-wave"><option>triangle</option><option>sawtooth</option><option>sine</option><option>square</option></select></label>
+                <label>Attack (ms)<input id="lab-attack" type="number" min="2" max="1000" value="12"></label>
+                <label>Release (ms)<input id="lab-release" type="number" min="20" max="3000" value="450"></label>
+                <label>Root note<input id="lab-root" type="number" min="24" max="96" value="48"></label>
+            </div>
+        </section>
+        <section class="lab-panel lab-strip lab-capture">
+            <div>
+                <h3>Gesture capture</h3>
+                <div class="lab-line">
+                    <input id="lab-label" maxlength="60" placeholder="Take name" aria-label="Take name">
+                    <button type="button" id="lab-record" aria-pressed="false">Record</button>
+                    <button type="button" id="lab-export" disabled>Export JSON</button>
+                    <button type="button" id="lab-learn">Train examples</button>
+                </div>
+                <output id="lab-take" aria-live="polite"></output>
+            </div>
+            <div class="lab-events"><h3>Recent events</h3><output id="lab-last-gesture">No learned gesture detected yet</output><ol id="lab-events"></ol></div>
+        </section>
+    </div>
+    <section id="pane-ink" hidden aria-labelledby="lab-ink-heading">
+        <div class="lab-heading">
+            <h2 id="lab-ink-heading">Ink</h2>
+            <div class="lab-line">
+                <output id="lab-ink-gate">Squeeze to draw</output>
+                <output id="lab-ink-gesture" aria-live="polite"></output>
+                <button id="lab-ink-zoom-out" type="button" aria-label="Zoom out of selected view">−</button>
+                <button id="lab-ink-zoom-in" type="button" aria-label="Zoom in on selected view">+</button>
+                <button id="lab-ink-pan-3d" type="button" aria-pressed="false">Pan 3D</button>
+                <button id="lab-ink-reset-view" type="button">Reset views</button>
+                <button id="lab-ink-expand" type="button" aria-pressed="false">Expand 3D</button>
+            </div>
+        </div>
+        <div id="lab-ink-views" class="lab-ink-views">
+            <section class="lab-panel lab-ink-panel" aria-label="Front view">
+                <h3>Front <small>X / Y</small></h3><canvas id="lab-ink-front" tabindex="0" aria-label="Front trajectory. Arrow keys pan. Plus and minus zoom."></canvas>
+            </section>
+            <section class="lab-panel lab-ink-panel" aria-label="Top view">
+                <h3>Top <small>X / Z</small></h3><canvas id="lab-ink-top" tabindex="0" aria-label="Top trajectory. Arrow keys pan. Plus and minus zoom."></canvas>
+            </section>
+            <section class="lab-panel lab-ink-panel" aria-label="Side view">
+                <h3>Side <small>Z / Y</small></h3><canvas id="lab-ink-side" tabindex="0" aria-label="Side trajectory. Arrow keys pan. Plus and minus zoom."></canvas>
+            </section>
+            <section class="lab-panel lab-ink-panel lab-ink-orbit" aria-label="Free 3D view">
+                <h3>3D <small>Drag to orbit · Shift-drag to pan</small></h3>
+                <canvas id="lab-ink-3d" tabindex="0" aria-label="3D trajectory. Arrow keys orbit. Shift and arrow keys pan. Plus and minus zoom."></canvas>
+            </section>
+        </div>
+        <div class="lab-panel lab-strip">
+            <div class="lab-controls">
+                <label>Tracking<select id="lab-ink-mode"><option value="integrated">Integrated position</option><option value="relative">Damped motion</option></select></label>
+                <label id="lab-ink-gravity-label">Gravity estimate<select id="lab-ink-gravity"><option value="follow">Follow tilt</option><option value="fixed">Fixed during stroke</option></select></label>
+                <label id="lab-ink-gain-label" hidden>Ink sensitivity<input id="lab-ink-gain" type="number" min="4" max="48" step="2" value="24"></label>
+                <button id="lab-clear" type="button">Clear ink</button>
+                <button id="lab-ink-calibrate" type="button">Calibrate rest</button>
+                <output id="lab-ink-distance"></output>
+            </div>
+            <output id="lab-ink-optical"></output>
+        </div>
+        <section class="lab-panel lab-strip" data-gesture-monitor aria-label="Gesture monitor"></section>
+    </section>
+    <div id="pane-firmware" hidden>
+        <section class="section">
+            <h2>Firmware</h2>
+            <p>Download the exact stock base for your hardware, then select a 40 ms build and choose that file. The browser verifies and patches it locally before staging.</p>
+            <p><a href="https://api2.qcwxkjvip.com/download/ota/RY02_V3.0/RY02_3.00.38_250403.bin" target="_blank" rel="noopener">R02 stock base · RY02_V3.0</a> ·
+            <a href="https://api2.qcwxkjvip.com/download/ota/RY03CR_V1.0/RY03CR_1.00.06_241212.bin" target="_blank" rel="noopener">R10 stock base · RY03CR_V1.0</a> ·
+            <a href="docs/ring-firmware.md">Firmware findings</a></p>
+            <div class="firmware-fields">
+                <div class="firmware-row">
+                    <span class="firmware-label">Ring</span>
+                    <output id="device-info" aria-live="polite">Disconnected</output>
+                    <button type="button" id="read-device-info" title="Read hardware and firmware from the connected ring">Read version</button>
+                </div>
+                <div class="firmware-row" id="firmware-picker">
+                    <label class="firmware-label" for="firmware-preset">Image</label>
+                    <select id="firmware-preset" title="Choose a bundled image or a local firmware file"></select>
+                    <button type="button" id="firmware-stage" title="Verify and preview the selected bundled image">Stage image</button>
+                    <input type="file" id="firmware-file" accept=".bin" hidden>
+                </div>
+                <div class="firmware-row" id="firmware-staged" hidden>
+                    <span class="firmware-label">Image</span>
+                    <output id="firmware-image" aria-live="polite"></output>
+                    <button type="button" id="firmware-change" title="Clear the staged image and choose another">Change image</button>
+                </div>
+                <div class="firmware-row firmware-upload">
+                    <label class="firmware-label" for="firmware-progress">Upload</label>
+                    <div class="firmware-meter">
+                        <progress id="firmware-progress" max="100" value="0"></progress>
+                        <span id="firmware-percent" aria-hidden="true">0%</span>
+                    </div>
+                    <button type="button" id="firmware-flash" disabled title="Flash a staged image matching the connected hardware">Flash firmware</button>
+                </div>
+                <div class="firmware-feedback">
+                    <output id="firmware-status" aria-live="polite"></output>
+                    <output id="firmware-version-check"></output>
+                    <output id="firmware-mismatch" aria-live="polite"></output>
+                </div>
+            </div>
+        </section>
+    </div>
+    </main>
+    <details class="section collapsible" id="system-log" open>
+        <summary><span>Log &amp; commands</span><span class="disclosure-action" aria-hidden="true"></span></summary>
+        <div class="studio-row log-toolbar">
+        <label for="log-mode">Log view</label>
+        <select id="log-mode">
+            <option value="stream">Stream</option>
+            <option value="latest">Latest by message type</option>
+        </select>
+            <button type="button" id="copyLogButton" title="Copy the full recent log in chronological order">Copy log</button>
+            <button type="button" id="clearLogButton">Clear</button>
+            <output id="log-copy-status" aria-live="polite"></output>
+        </div>
+        <div class="log-container"><div id="log"></div></div>
+            <div class="command-input studio-row">
+                <select id="command-type" aria-label="Command type" title="Settings packets or framed commands"><option value="settings">Settings</option><option value="framed">Framed</option></select>
+                <input type="text" id="cmdSTXT" value="03" aria-label="Command (hex)" title="Command bytes in hex" spellcheck="false">
+                <input type="text" id="cmdTXTdata" placeholder="Data (hex)" aria-label="Data (hex)" title="Optional data bytes in hex" spellcheck="false">
+                <button type="button" id="sendArrayButton" title="Send command (⌘Enter)" aria-keyshortcuts="Meta+Enter">Send</button>
+            </div>
+
+        <details class="section collapsible">
+            <summary><span>Command catalog</span><span class="disclosure-action" aria-hidden="true"></span></summary>
+            <label for="command-search">Find a command</label>
+            <input id="command-search" type="search" placeholder="Search name or hex" style="width:100%;padding:8px;margin-top:6px">
+
+            <ul class="cmd-list" id="command-list">
+<li data-search="battery status 03"><span>Battery status <code>03</code></span><button type="button" data-command="03">Use</button></li>
+<li data-search="reboot ring 08"><span>Reboot ring <code>08</code></span><button type="button" data-command="08">Use</button></li>
+<li data-search="blink twice 10"><span>Blink twice <code>10</code></span><button type="button" data-command="10">Use</button></li>
+<li data-search="heart rate measurement 690101"><span>Heart rate measurement <code>690101</code></span><button type="button" data-command="690101">Use</button></li>
+<li data-search="get steps/calories 7312"><span>Get steps/calories <code>7312</code></span><button type="button" data-command="7312">Use</button></li>
+<li data-search="raw sensor data on a10404"><span>Raw sensor data on <code>A10404</code></span><button type="button" data-command="A10404">Use</button></li>
+<li data-search="raw sensor data off a102"><span>Raw sensor data off <code>A102</code></span><button type="button" data-command="A102">Use</button></li>
+<li data-search="enable camera gesture 0204"><span>Enable camera gesture <code>0204</code></span><button type="button" data-command="0204">Use</button></li>
+<li data-search="disable camera gesture 0206"><span>Disable camera gesture <code>0206</code></span><button type="button" data-command="0206">Use</button></li>
+<li data-search="reset to default ff"><span>Reset to default <code>FF</code></span><button type="button" data-command="FF">Use</button></li>
+<li data-search="led color red 0101"><span>LED color red <code>0101</code></span><button type="button" data-command="0101">Use</button></li>
+<li data-search="led color green 0102"><span>LED color green <code>0102</code></span><button type="button" data-command="0102">Use</button></li>
+<li data-search="led color blue 0103"><span>LED color blue <code>0103</code></span><button type="button" data-command="0103">Use</button></li>
+<li data-search="sync today's data 73"><span>Sync today's data <code>73</code></span><button type="button" data-command="73">Use</button></li>
+<li data-search="sync heart rate history 7301"><span>Sync heart rate history <code>7301</code></span><button type="button" data-command="7301">Use</button></li>
+<li data-search="sync spo2 history 7303"><span>Sync SpO2 history <code>7303</code></span><button type="button" data-command="7303">Use</button></li>
+<li data-search="sync step details 7304"><span>Sync step details <code>7304</code></span><button type="button" data-command="7304">Use</button></li>
+<li data-search="get temperature 7305"><span>Get temperature <code>7305</code></span><button type="button" data-command="7305">Use</button></li>
+<li data-search="sync sport data 7306"><span>Sync sport data <code>7306</code></span><button type="button" data-command="7306">Use</button></li>
+<li data-search="get blood sugar 730d"><span>Get blood sugar <code>730D</code></span><button type="button" data-command="730D">Use</button></li>
+<li data-search="enable music control gestures 0205"><span>Enable music control gestures <code>0205</code></span><button type="button" data-command="0205">Use</button></li>
+<li data-search="disable music control 0207"><span>Disable music control <code>0207</code></span><button type="button" data-command="0207">Use</button></li>
+<li data-search="set time (needs timestamp) 0401"><span>Set time — parameters required: timestamp <code>0401</code></span><button type="button" data-command="0401">Use</button></li>
+<li data-search="set alarm 0501"><span>Set alarm — parameters required <code>0501</code></span><button type="button" data-command="0501">Use</button></li>
+<li data-search="set sedentary reminder 0601"><span>Set sedentary reminder — parameters required <code>0601</code></span><button type="button" data-command="0601">Use</button></li>
+            </ul>
+        </details>
+    </details>
+
+    <script src="ring-gesture-monitor.js"></script>
+    <script src="ring-gestures.js"></script>
+    <script src="ring-firmware.js"></script>
+    <script src="ring-lab-signals.js"></script>
+    <script src="ring-lab-trajectory.js"></script>
+    <script src="ring-lab-synth.js"></script>
+    <script src="ring-lab-pose.js"></script>
+    <script src="ring-lab-calibration.js"></script>
+    <script src="ring-lab-view.js"></script>
+    <script src="ring-lab.js"></script>
+    <script>
+        // Global state variables
+        const RingController = {
+            // BLE connection variables
+            device: null,
+            server: null,
+            mainService: null,
+            settingsService: null,
+            writeCharacteristic: null,
+            notifyCharacteristic: null,
+            settingsWriteCharacteristic: null,
+            settingsNotifyCharacteristic: null,
+
+            heartRateTimer: null,
+            activityRead: null,
+            lastLiveActivity: null,
+            activityTimer: null,
+            autoRefreshHR: false,
+            autoRefreshActivity: false,
+
+            // Feature state
+            isConnected: false,
+            isConnecting: false,
+            rawDataEnabled: false,
+            gestureEnabled: false,
+
+            // Data tracking
+            lastRawValues: { x: null, y: null, z: null },
+            currentRawValues: { x: null, y: null, z: null },
+            lastUpdateTime: null,
+            lastStepCount: 0,
+            lastCalories: 0,
+            lastDistance: 0,
+
+            // Command queue
+            commandQueue: [],
+            isProcessingQueue: false,
+            reconnectAttempts: 0,
+
+            // MIDI variables
+            midi: null,
+            midiOutput: null,
+            midiChannel: 0,
+            midiInterpolationTimers: {},
+            midiCurrentValues: {},
+            midiTargetValues: {},
+            lastMIDIValues: {},
+
+            // Interpolation
+            interpInterval: 1000,
+            interpTimerId: null,
+            noteDuration: 1000,
+
+            // Connection history
+        };
+
+        // DOM elements
+        const DOM = {
+            // Initialize DOM references when document is loaded
+            init() {
+                this.connectButton = document.getElementById('connectButton');
+                this.toggleDataButton = document.getElementById('toggleDataButton');
+                this.statusIndicator = document.getElementById('status-indicator');
+                this.connectionStatus = document.getElementById('connection-status');
+                this.log = document.getElementById('log');
+                this.clearLogButton = document.getElementById('clearLogButton');
+                this.interpInterval = document.getElementById('interp-interval');
+                this.cmdSTXT = document.getElementById('cmdSTXT');
+                this.cmdTXTdata = document.getElementById('cmdTXTdata');
+                this.sendArrayButton = document.getElementById('sendArrayButton');
+                this.midiOutput = document.getElementById('midi-output');
+                this.midiChannel = document.getElementById('midi-channel');
+
+                // Metric cards
+                this.batteryCard = document.getElementById('battery-card');
+                this.heartRateCard = document.getElementById('heart-rate-card');
+                this.stepsCard = document.getElementById('steps-card');
+                this.caloriesCard = document.getElementById('calories-card');
+                this.distanceCard = document.getElementById('distance-card');
+
+                this.clearMonitoringButton = document.getElementById('clearMonitoringButton');
+                this.getHeartHistoryButton = document.getElementById('getHeartHistoryButton');
+                this.getStepHistoryButton = document.getElementById('getStepHistoryButton');
+                this.getSpo2HistoryButton = document.getElementById('getSpo2HistoryButton');
+                this.getSportHistoryButton = document.getElementById('getSportHistoryButton');
+            }
+        };
+
+        // Utility functions
+        const Utils = {
+            // Convert hex string to byte array
+            hexToBytes(hex) {
+                const bytes = [];
+                for (let i = 0; i < hex.length; i += 2) {
+                    bytes.push(parseInt(hex.substr(i, 2), 16));
+                }
+                return new Uint8Array(bytes);
+            },
+
+            // Convert byte array to hex string
+            bytesToHex(buffer) {
+                return Array.from(new Uint8Array(buffer))
+                    .map(b => b.toString(16).padStart(2, '0'))
+                    .join('');
+            },
+
+            // Add header to command
+            addHeader(type, dataArray) {
+                const arrayOut = new Uint8Array((dataArray ? dataArray.length : 0) + 6);
+                arrayOut[0] = 0xBC;
+                arrayOut[1] = type & 0xff;
+
+                if (dataArray && dataArray.length > 0) {
+                    const partCRC = this.crc16(dataArray);
+                    arrayOut[2] = dataArray.length & 0xff;
+                    arrayOut[3] = (dataArray.length >> 8) & 0xff;
+                    arrayOut[4] = partCRC & 0xff;
+                    arrayOut[5] = (partCRC >> 8) & 0xff;
+
+                    for (let i = 0; i < dataArray.length; i++) {
+                        arrayOut[6 + i] = dataArray[i] & 0xff;
+                    }
+                } else {
+                    arrayOut[2] = 0;
+                    arrayOut[3] = 0;
+                    arrayOut[4] = 0xff;
+                    arrayOut[5] = 0xff;
+                }
+
+                return arrayOut;
+            },
+
+            // Calculate CRC16
+            crc16(dataArray) {
+                let crc = 0xffff;
+
+                if (!dataArray || dataArray.length === 0) {
+                    return crc;
+                }
+
+                for (let i = 0; i < dataArray.length; i++) {
+                    crc ^= dataArray[i] & 0xff;
+                    for (let j = 0; j < 8; j++) {
+                        crc = (crc & 1) !== 0 ? (crc >> 1) ^ 0xA001 : crc >> 1;
+                    }
+                }
+
+                return crc & 0xffff;
+            },
+
+            // Convert signed integers
+            int16(uint16) {
+                return uint16 > 32767 ? uint16 - 65536 : uint16;
+            },
+
+            int12(uint12) {
+                return uint12 > 2047 ? uint12 - 4096 : uint12;
+            },
+
+            // Convert raw accelerometer value to G
+            convertRawToG(rawValue) {
+                return (rawValue / 2048) * 4;
+            },
+
+            // Format timestamp
+            formatTime() {
+                const now = new Date();
+                const hours = now.getHours().toString().padStart(2, '0');
+                const minutes = now.getMinutes().toString().padStart(2, '0');
+                const seconds = now.getSeconds().toString().padStart(2, '0');
+                return `${hours}:${minutes}:${seconds}`;
+            }
+        };
+
+        // BLE connection and communication
+        const BLE = {
+            // Connect to device
+            async connect() {
+                if (RingController.isConnected) {
+                    // Just disconnect without showing device selection
+                    await this.disconnect();
+                    UI.updateConnectionStatus(false);
+                    return;
+                }
+
+                if (RingController.isConnecting) {
+                    return;
+                }
+
+                RingController.isConnecting = true;
+                UI.updateConnectionStatus('connecting');
+
+                try {
+                    const options = {
+                        filters: [
+                            { namePrefix: 'COLMI' },
+                            { namePrefix: 'R0' },
+                            { namePrefix: 'R1' },
+                            { namePrefix: 'R02' },
+                            { services: ['de5bf728-d711-4e47-af26-65e3012a5dc7'] }
+                        ],
+                        optionalServices: ['device_information', 'de5bf728-d711-4e47-af26-65e3012a5dc7', '6e40fff0-b5a3-f393-e0a9-e50e24dcca9e']
+                    };
+
+                    UI.addLog("Scanning for compatible devices...");
+                    UI.addLog("This will show COLMI rings and R0x/R1x variants");
+
+                    const device = await navigator.bluetooth.requestDevice(options);
+                    UI.addLog(`Found device: ${device.name || 'Unknown'}`);
+
+                    device.addEventListener('gattserverdisconnected', () => this.handleDisconnect());
+                    RingController.device = device;
+
+                    await this.connectToDevice();
+                } catch (error) {
+                    UI.addLog(`Connection failed: ${error.message}`);
+                    RingController.isConnecting = false;
+                    UI.updateConnectionStatus(false);
+                }
+            },
+
+            async readDeviceInfo() {
+                const output = document.getElementById('device-info');
+                const server = RingController.server;
+                if (!server?.connected) {
+                    output.textContent = 'Connect the ring to read its version.';
+                    return;
+                }
+
+                FirmwareLoader.setHardware(null);
+                output.textContent = 'Reading ring information…';
+                const values = [];
+                let hardware, firmware;
+                try {
+                    const service = await server.getPrimaryService(0x180a);
+                    for (const [label, uuid] of [['Model', 0x2a24], ['Hardware', 0x2a27], ['Firmware', 0x2a26], ['Software', 0x2a28]]) {
+                        try {
+                            const field = await service.getCharacteristic(uuid);
+                            const value = new TextDecoder().decode(await field.readValue()).replace(/\0/g, '').trim();
+                            if (value) values.push(`${label}: ${value}`);
+                            if (label === "Hardware") hardware = value;
+                            if (label === "Firmware") firmware = value;
+                        } catch { /* This characteristic is optional. */ }
+                    }
+                    if (RingController.server === server && server.connected) {
+                        output.textContent = values.join(' · ') || 'The ring returned no version strings.';
+                        FirmwareLoader.setHardware(hardware);
+                        FirmwareLoader.readVersion(firmware);
+                    }
+                } catch (error) {
+                    if (RingController.server === server) output.textContent = `Device Information unavailable: ${error.message}`;
+                }
+            },
+
+            // Connect to the selected device
+            async connectToDevice() {
+                try {
+                    UI.addLog(`Connecting to: ${RingController.device.name || 'Unknown Device'}`);
+
+                    // Connect to GATT server
+                    const server = await RingController.device.gatt.connect();
+                    RingController.server = server;
+
+
+                    // Get primary service
+                    const service = await server.getPrimaryService('de5bf728-d711-4e47-af26-65e3012a5dc7');
+                    RingController.settingsService = service;
+
+                    // Get write characteristic
+                    const writeChar = await service.getCharacteristic('de5bf72a-d711-4e47-af26-65e3012a5dc7');
+                    RingController.writeCharacteristic = writeChar;
+                    UI.addLog('> Found write characteristic');
+
+                    // Get notify characteristic
+                    const notifyChar = await service.getCharacteristic('de5bf729-d711-4e47-af26-65e3012a5dc7');
+                    RingController.notifyCharacteristic = notifyChar;
+
+                    // Start notifications
+                    await notifyChar.startNotifications();
+                    notifyChar.addEventListener('characteristicvaluechanged', event => {
+                        this.handleNotify(event.target.value);
+                    });
+
+                    // Connect to custom service
+                    await this.connectToCustomService();
+
+                } catch (error) {
+                    UI.addLog(`Error connecting to device: ${error.message}`);
+                    this.handleError(error);
+                }
+            },
+
+            // Connect to custom service for settings
+            async connectToCustomService() {
+                try {
+                    const services = await RingController.server.getPrimaryServices();
+                    let customService = null;
+
+                    for (const service of services) {
+                        if (service.uuid === '6e40fff0-b5a3-f393-e0a9-e50e24dcca9e') {
+                            customService = service;
+                            break;
+                        }
+                    }
+
+                    if (!customService) {
+                        throw new Error('Required custom service not found');
+                    }
+
+                    RingController.mainService = customService;
+                    UI.addLog('Found custom Main service');
+
+                    // Get settings write characteristic
+                    const settingsWriteChar = await customService.getCharacteristic('6e400002-b5a3-f393-e0a9-e50e24dcca9e');
+                    RingController.settingsWriteCharacteristic = settingsWriteChar;
+                    UI.addLog('Found custom write characteristic');
+
+                    // Get settings notify characteristic
+                    const settingsNotifyChar = await customService.getCharacteristic('6e400003-b5a3-f393-e0a9-e50e24dcca9e');
+                    RingController.settingsNotifyCharacteristic = settingsNotifyChar;
+                    UI.addLog('Found custom notify characteristic');
+
+                    // Start notifications
+                    await settingsNotifyChar.startNotifications();
+                    settingsNotifyChar.addEventListener('characteristicvaluechanged', event => {
+                        this.handleSettingsNotify(event.target.value);
+                    });
+
+                    // Initialize device state before enabling controls.
+                    await this.sendDataArray(Utils.hexToBytes('A102'));
+                    await this.sendDataArray(Utils.hexToBytes('0206'));
+                    await this.sendDataArray(Utils.hexToBytes('03'));
+
+                    // Connection successful
+                    UI.addLog('CONNECTED successfully to the ring');
+                    RingController.isConnected = true;
+                    UI.updateConnectionStatus(true);
+                    RingController.isConnecting = false;
+                    void this.readDeviceInfo();
+
+                } catch (error) {
+                    UI.addLog(`Error in custom service connection: ${error.message}`);
+                    this.handleError(error);
+                }
+            },
+
+            // Handle disconnect event
+            handleDisconnect() {
+                this.resetConnection();
+                UI.addLog('Disconnected.');
+                UI.updateConnectionStatus(false);
+            },
+
+            // Reset connection state
+            resetConnection(origin) {
+                FirmwareLoader.disconnected(origin);
+                GestureLearning.resetMotion();
+                AccelPacketRate.stop();
+                document.getElementById('stream-ring-gestures').disabled = false;
+                UI.stopHeartRate();
+                UI.stopActivityMonitoring();
+                clearTimeout(RingController.activityRead?.timeout);
+                RingController.activityRead = null;
+                RingController.lastLiveActivity = null;
+                RingController.server = null;
+                RingController.mainService = null;
+                RingController.settingsService = null;
+                RingController.writeCharacteristic = null;
+                RingController.notifyCharacteristic = null;
+                RingController.settingsWriteCharacteristic = null;
+                RingController.settingsNotifyCharacteristic = null;
+                RingController.isConnected = false;
+                RingController.isConnecting = false;
+                RingController.rawDataEnabled = false;
+                RingController.gestureEnabled = false;
+                FirmwareLoader.setHardware(null);
+                DOM.toggleDataButton.textContent = 'Start stream';
+                RingController.commandQueue = [];
+                RingController.isProcessingQueue = false;
+
+                // Reset UI
+                DOM.toggleDataButton.title = DOM.toggleDataButton.ariaLabel = 'Start raw data and gesture monitoring';
+                DOM.toggleDataButton.setAttribute('aria-pressed', 'false');
+                DOM.toggleDataButton.classList.remove('active');
+
+                // Stop interpolation
+                if (RingController.interpTimerId) {
+                    clearInterval(RingController.interpTimerId);
+                    RingController.interpTimerId = null;
+                }
+            },
+
+            // Disconnect from device
+            async disconnect() {
+                FirmwareLoader.disconnected('Disconnect clicked');
+                if (RingController.device && RingController.device.gatt.connected) {
+                    RingController.device.gatt.disconnect();
+                }
+                this.resetConnection();
+                UI.addLog('Disconnected');
+                UI.updateConnectionStatus(false);
+            },
+
+            // Handle connection errors
+            handleError(error) {
+                console.error(error);
+
+                if (!RingController.device) {
+                    RingController.isConnecting = false;
+                    UI.updateConnectionStatus(false);
+                    return;
+                }
+
+                if (RingController.reconnectAttempts <= 5) {
+                    RingController.reconnectAttempts++;
+                    this.connectToDevice();
+                } else {
+                    UI.addLog('Was not able to connect, aborting');
+                    RingController.reconnectAttempts = 0;
+                    RingController.isConnecting = false;
+                    UI.updateConnectionStatus(false);
+                }
+            },
+
+            // Queue command operation
+            async queueOperation(operation) {
+                return new Promise((resolve, reject) => {
+                    RingController.commandQueue.push({ operation, resolve, reject });
+                    this.processQueue();
+                });
+            },
+
+            // Process command queue
+            async processQueue() {
+                if (RingController.isProcessingQueue || RingController.commandQueue.length === 0) {
+                    return;
+                }
+
+                RingController.isProcessingQueue = true;
+                const { operation, resolve, reject } = RingController.commandQueue[0];
+
+                try {
+                    const result = await operation();
+                    resolve(result);
+                } catch (error) {
+                    reject(error);
+                } finally {
+                    RingController.commandQueue.shift();
+                    RingController.isProcessingQueue = false;
+                    this.processQueue();
+                }
+            },
+
+            // Send data array to device
+            async sendDataArray(arrayIn, channel = 'settings') {
+                if (arrayIn.length > 15) {
+                    UI.addLog('Data too long!');
+                    return;
+                }
+
+                return this.queueOperation(async () => {
+                    const arrayOut = new Uint8Array(16);
+
+                    for (let i = 0; i < arrayIn.length; i++) {
+                        arrayOut[i] = arrayIn[i] & 0xff;
+                        arrayOut[15] = (arrayOut[15] + arrayOut[i]) & 0xff;
+                    }
+
+                    if (channel === 'standard') await this.sendRawCommand(Utils.bytesToHex(arrayOut));
+                    else await this.sendSettingsCommand(Utils.bytesToHex(arrayOut));
+                });
+            },
+
+            // Send command with data
+            async sendCommand(cmd, dataIn) {
+                const cmdByte = Utils.hexToBytes(cmd)[0];
+                const dataBytes = Utils.hexToBytes(dataIn);
+                const fullCommand = Utils.addHeader(cmdByte, dataBytes);
+
+                await this.sendRawCommand(Utils.bytesToHex(fullCommand));
+            },
+
+            // Send raw command to device
+            async sendRawCommand(cmdTXT) {
+                const cmd = Utils.hexToBytes(cmdTXT);
+                UI.addLog(`Send CMD: ${cmdTXT}`);
+
+                try {
+                    if (RingController.writeCharacteristic) {
+                        await RingController.writeCharacteristic.writeValue(cmd);
+                    } else {
+                        throw new Error('Write characteristic not available');
+                    }
+                } catch (error) {
+                    this.handleError(error);
+                    throw error;
+                }
+            },
+
+            // Send settings command to device
+            async sendSettingsCommand(cmdTXT) {
+                const cmd = Utils.hexToBytes(cmdTXT);
+                UI.addLog(`Send Settings CMD: ${cmdTXT}`);
+
+                try {
+                    if (RingController.settingsWriteCharacteristic) {
+                        await RingController.settingsWriteCharacteristic.writeValue(cmd);
+                    } else {
+                        throw new Error('Settings write characteristic not available');
+                    }
+                } catch (error) {
+                    this.handleError(error);
+                    throw error;
+                }
+            },
+
+            // Handle notify events
+            handleNotify(data) {
+                const bytes = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+                if (FirmwareLoader.handleNotify(bytes)) return;
+                const hexData = Utils.bytesToHex(bytes);
+                UI.logPacket('notify', 'Got bytes', hexData);
+                this.parseNotifyData(hexData);
+            },
+
+            // Handle settings notify events
+            handleSettingsNotify(data) {
+                const hexData = Utils.bytesToHex(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
+
+                // Silently ignore raw data packets when monitoring is off
+                if (hexData.slice(0, 2).toUpperCase() === 'A1' && !RingController.rawDataEnabled) {
+                    const now = Date.now();
+                    if (now - (this.lastUnexpectedRaw ?? 0) > 2000) {
+                        this.lastUnexpectedRaw = now;
+                        UI.addLog('Raw packets still arriving while monitoring is off');
+                    }
+                    return;
+                }
+
+                UI.logPacket('settings', 'Got Settings bytes', hexData);
+                this.parseNotifyData(hexData);
+            },
+
+            async requestActivityLog(inspect = false) {
+                if (!RingController.isConnected) return;
+                if (RingController.activityRead) {
+                    RingController.activityRead.inspect ||= inspect;
+                    return;
+                }
+
+                const read = { inspect, rows: null };
+                RingController.activityRead = read;
+                read.timeout = setTimeout(() => {
+                    if (RingController.activityRead !== read) return;
+                    RingController.activityRead = null;
+                    UI.addLog('No complete activity log reply');
+                    if (read.inspect) document.getElementById('record-probe').textContent = 'No complete activity log reply.';
+                }, 8000);
+                try {
+                    await this.sendDataArray(Utils.hexToBytes('43000F005F01'), 'standard');
+                } catch (error) {
+                    clearTimeout(read.timeout);
+                    if (RingController.activityRead === read) RingController.activityRead = null;
+                    UI.addLog(`Activity log request failed: ${error.message}`);
+                }
+            },
+
+            parseActivityLog(packet) {
+                const read = RingController.activityRead;
+                if (!read) return;
+                if (packet[1] === 0xf0) {
+                    read.rows = new Map();
+                    read.calorieScale = packet[3] === 1 ? 10 : 1;
+                    return;
+                }
+                if (packet[1] !== 0xff) {
+                    if (!read.rows || packet[5] >= packet[6]) return;
+                    read.rows.set(packet[5], {
+                        slot: packet[4],
+                        steps: packet[9] | packet[10] << 8,
+                        calories: (packet[7] | packet[8] << 8) * read.calorieScale / 1000,
+                        distance: packet[11] | packet[12] << 8
+                    });
+                    if (read.rows.size !== packet[6]) return;
+                }
+                clearTimeout(read.timeout);
+                RingController.activityRead = null;
+                if (read.inspect) Records.replaceActivity(packet[1] === 0xff ? [] : [...read.rows.values()]);
+                if (packet[1] === 0xff) {
+                    UI.addLog('No stored activity for today');
+                    return;
+                }
+
+                const totals = { steps: 0, calories: 0, distance: 0 };
+                for (const row of [...read.rows.values()].sort((a, b) => a.slot - b.slot)) {
+                    for (const key of Object.keys(totals)) totals[key] += row[key];
+
+                }
+                if (RingController.lastLiveActivity === null || Date.now() - RingController.lastLiveActivity > 15000) {
+                    for (const [key, value] of Object.entries(totals)) {
+                        UI.updateMetric(key, key === 'calories' ? value.toFixed(2) : value);
+                        document.getElementById(`${key}-time`).textContent += ' · log';
+                    }
+                }
+            },
+
+            // Parse notification data
+            parseNotifyData(dataHex) {
+                const dataIn = Utils.hexToBytes(dataHex);
+
+                if (dataIn.length !== 16) {
+                    return;
+                }
+
+                // Verify checksum
+                let crcTemp = 0;
+                for (let i = 0; i < dataIn.length - 1; i++) {
+                    crcTemp = (crcTemp + dataIn[i]) & 0xff;
+                }
+
+                if (crcTemp !== dataIn[15]) {
+                    return;
+                }
+
+                // Skip raw data packets if monitoring is disabled
+                if (dataIn[0] === 0xA1 && !RingController.rawDataEnabled) {
+                    return;
+                }
+
+                // Process by packet type
+                switch (dataIn[0]) {
+                    case 0x02: // Gesture notifications
+                        if (dataIn[1] === 0x02) {
+                            this.handleGestureData(dataIn[15]);
+                        }
+                        break;
+
+                    case 0x03: // Battery status
+                        if (dataIn[1] !== 0) {
+                            UI.addLog(`Battery at: ${dataIn[1]}%`);
+                            UI.updateMetric('battery', dataIn[1], '%');
+                        }
+                        break;
+
+                    case 0xA1: // Raw sensor data
+                        if (!RingController.rawDataEnabled) return;
+
+                        switch (dataIn[1]) {
+                            case 1: // Blood data
+                                const rawBlood = Utils.int16((dataIn[2] << 8) | dataIn[3]);
+                                UI.addLog(`Raw Blood: ${rawBlood} Max: ${dataIn[5]} Max: ${dataIn[7]} Max: ${dataIn[9]}`);
+                                UI.updateBloodData(rawBlood, dataIn[5], dataIn[7], dataIn[9]);
+                                break;
+
+                            case 2: // HRS data
+                                const hrsRaw = Utils.int16((dataIn[2] << 8) | dataIn[3]);
+                                const hrsMax = Utils.int16((dataIn[4] << 8) | dataIn[5]);
+                                const hrsMin = Utils.int16((dataIn[6] << 8) | dataIn[7]);
+                                const hrsDiff = Utils.int16((dataIn[8] << 8) | dataIn[9]);
+
+                                UI.addLog(`HRS Raw: ${hrsRaw} Max: ${hrsMax} Min: ${hrsMin} Difference: ${hrsDiff}`);
+                                UI.updateHRSData(hrsRaw, hrsMax, hrsMin, hrsDiff);
+                                break;
+
+                            case 3: // Accelerometer data
+                                const rawY = Utils.int12((((dataIn[2] << 4) | (dataIn[3] & 0xf)) & 0xfff));
+                                const rawZ = Utils.int12((((dataIn[4] << 4) | (dataIn[5] & 0xf)) & 0xfff));
+                                const rawX = Utils.int12((((dataIn[6] << 4) | (dataIn[7] & 0xf)) & 0xfff));
+
+                                const xG = Utils.convertRawToG(rawX);
+                                const yG = Utils.convertRawToG(rawY);
+                                const zG = Utils.convertRawToG(rawZ);
+
+                                UI.addLog(`Raw ACCL Data X: ${rawX} Y: ${rawY} Z: ${rawZ}`);
+                                UI.updateAccelerometerData(rawX, rawY, rawZ, xG, yG, zG);
+                                break;
+                        }
+                        break;
+
+                    case 0x15:
+                        Records.readHeartPacket(dataIn);
+                        break;
+                    case 0x43:
+                        this.parseActivityLog(dataIn);
+                        break;
+
+                    case 0x69: // Heart rate
+                        if (dataIn[1] === 0x01) {
+                            // If we got a heart rate value
+                            if (dataIn[3]) {
+                                const heartRate = dataIn[3];
+                                UI.addLog(`Heart Rate: ${heartRate} bpm`);
+                                UI.updateHeartRateValues([heartRate]);
+                                if (RingController.heartRateTimer !== null) {
+                                    clearTimeout(RingController.heartRateTimer);
+                                    RingController.heartRateTimer = setTimeout(() => UI.requestHeartRate(), 5000);
+                                }
+                            }
+                            // If ring is not on finger
+                            else if (dataIn[2]) {
+                                UI.addLog('Ring not on finger!');
+                                // Stop monitoring if ring is not on finger
+                                if (RingController.heartRateTimer) {
+                                    UI.stopHeartRate();
+                                }
+                            }
+                            // If measurement is in progress
+                            else {
+                                document.getElementById('heart-rate-time').textContent = 'Measuring…';
+                                UI.addLog('Measuring heart rate...');
+                            }
+                        }
+                        break;
+
+                    case 0x73: // History data responses
+                        switch(dataIn[1]) {
+                            case 0x12: { // Current activity totals
+                                RingController.lastLiveActivity = Date.now();
+                                const steps = (dataIn[2] << 16) | (dataIn[3] << 8) | dataIn[4];
+                                const calories = ((dataIn[5] << 16) | (dataIn[6] << 8) | dataIn[7]) / 1000;
+                                const distance = (dataIn[8] << 16) | (dataIn[9] << 8) | dataIn[10];
+
+                                UI.addLog(`Steps: ${steps} Calories: ${calories.toFixed(1)} Distance: ${distance}`);
+                                UI.updateMetric('steps', steps);
+                                UI.updateMetric('calories', calories.toFixed(1), 'kcal');
+                                UI.updateMetric('distance', distance, 'm');
+
+                                break;
+                            }
+                            case 0x01: // Heart rate history
+                                const hrTime = (dataIn[2] << 24) | (dataIn[3] << 16) | (dataIn[4] << 8) | dataIn[5];
+                                const hrValue = dataIn[6];
+                                if (hrValue > 0) {
+                                    const date = new Date(hrTime * 1000);
+                                    Records.add('heart', date.getTime(), hrValue, 'Ring history');
+                                    UI.addLog(`HR History: ${hrValue} bpm at ${date.toLocaleString()}`);
+                                }
+                                break;
+
+                            case 0x03: // SpO2 history
+                                const spo2Time = (dataIn[2] << 24) | (dataIn[3] << 16) | (dataIn[4] << 8) | dataIn[5];
+                                const spo2Value = dataIn[6];
+                                if (spo2Value > 0) {
+                                    const date = new Date(spo2Time * 1000);
+                                    Records.add('spo2', date.getTime(), spo2Value, 'Ring history');
+                                    UI.addLog(`SpO2 History: ${spo2Value}% at ${date.toLocaleString()}`);
+                                }
+                                break;
+
+                            case 0x04: // Step history
+                                const stepTime = (dataIn[2] << 24) | (dataIn[3] << 16) | (dataIn[4] << 8) | dataIn[5];
+                                const steps = (dataIn[6] << 16) | (dataIn[7] << 8) | dataIn[8];
+                                if (steps > 0) {
+                                    const date = new Date(stepTime * 1000);
+                                    Records.add('steps', date.getTime(), steps, 'Step history');
+                                    UI.addLog(`Step History: ${steps} steps at ${date.toLocaleString()}`);
+                                }
+                                break;
+
+                            case 0x06: // Sport history
+                                const sportTime = (dataIn[2] << 24) | (dataIn[3] << 16) | (dataIn[4] << 8) | dataIn[5];
+                                const sportType = dataIn[6];
+                                const duration = (dataIn[7] << 8) | dataIn[8];
+                                if (duration > 0) {
+                                    const date = new Date(sportTime * 1000);
+                                    Records.add('sport', date.getTime(), duration, `Sport type ${sportType}`);
+                                    UI.addLog(`Sport History: Type ${sportType}, Duration ${duration}min at ${date.toLocaleString()}`);
+                                }
+                                break;
+                        }
+                        break;
+                }
+            },
+
+            // Handle gesture data
+            handleGestureData(gestureType) {
+                if (!RingController.gestureEnabled || (gestureType === 4 && GestureLearning.builtIn('camera').enabled === false)) {
+                    return;
+                }
+
+                let gestureMsg = 'Unknown';
+                let midiValue = 0;
+
+                switch (gestureType) {
+                    case 0x04:
+                        gestureMsg = 'Camera Trigger';
+                        midiValue = 127;
+                        break;
+                    case 0x01:
+                        gestureMsg = 'Music Play/Pause';
+                        midiValue = 25;
+                        break;
+                    case 0x02:
+                        gestureMsg = 'Music Next';
+                        midiValue = 50;
+                        break;
+                    case 0x03:
+                        gestureMsg = 'Music Previous';
+                        midiValue = 75;
+                        break;
+                    case 0x05:
+                        gestureMsg = 'Raise to Wake';
+                        midiValue = 100;
+                        break;
+                    case 0x06:
+                        gestureMsg = 'Double Tap';
+                        midiValue = 115;
+                        break;
+                }
+
+                const code = '0x' + gestureType.toString(16).padStart(2, '0');
+                document.getElementById('gesture-last').textContent = `${gestureMsg} (${code}) · ${Utils.formatTime()}`;
+                Signals.record({gesture: gestureType});
+                RingLab.ringGesture(gestureType, gestureMsg);
+                UI.addLog(`Gesture detected: ${gestureMsg}`);
+
+                // Update MIDI data
+                document.getElementById('midi-gesture-data').textContent = gestureMsg;
+                document.getElementById('midi-gesture-value').textContent = midiValue;
+
+                // Send gesture to MIDI if mapped
+                const ccInput = document.getElementById('midi-gesture-cc');
+                if (gestureType !== 4 && ccInput && ccInput.value) {
+                    MIDI.startInterpolation('gesture', midiValue);
+                }
+            },
+
+            // Toggle raw data and gesture monitoring
+            async setRawMonitoring(enabled) {
+                const button = DOM.toggleDataButton;
+                const gestureToggle = document.getElementById('stream-ring-gestures');
+                const enableRingGestures = enabled && gestureToggle.checked;
+                if (!enabled) GestureLearning.resetMotion();
+                button.disabled = true;
+                gestureToggle.disabled = true;
+                try {
+                    await this.sendDataArray(Utils.hexToBytes(enabled ? 'A10404' : 'A102'));
+                    RingController.rawDataEnabled = enabled;
+                    button.textContent = enabled ? 'Stop stream' : 'Start stream';
+                    button.setAttribute('aria-pressed', String(enabled));
+                    button.classList.toggle('active', enabled);
+                    button.title = button.ariaLabel = enabled ? 'Stop raw data and gesture monitoring' : 'Start raw data and gesture monitoring';
+                    if (enabled) {
+                        AccelPacketRate.start();
+                        UI.startInterpolation();
+                    } else {
+                        RingLab.stopLive();
+                        AccelPacketRate.stop();
+                        UI.stopInterpolation();
+                    }
+                    if (enableRingGestures || !enabled) {
+                        await this.sendDataArray(Utils.hexToBytes(enableRingGestures ? '0204' : '0206'));
+                    }
+                    RingController.gestureEnabled = enableRingGestures;
+                } finally {
+                    button.disabled = !RingController.isConnected;
+                    gestureToggle.disabled = RingController.rawDataEnabled;
+                }
+            },
+
+            async toggleRawDataAndGesture() {
+                try {
+                    if (!RingController.rawDataEnabled && RingController.heartRateTimer !== null) {
+                        await UI.stopHeartRate(true);
+                    }
+                    await this.setRawMonitoring(!RingController.rawDataEnabled);
+                } catch (error) {
+                    UI.addLog(`Monitor command failed: ${error.message}`);
+                }
+            }
+        };
+
+        // UI management
+        const UI = {
+            // Update connection status in UI
+            updateConnectionStatus(status) {
+                if (status === false) RingLab.stopLive();
+                DOM.connectButton.textContent = status === true ? 'Disconnect' : status === 'connecting' ? 'Connecting…' : 'Connect';
+                DOM.connectButton.disabled = status === 'connecting';
+                document.getElementById('rebootButton').disabled = status !== true;
+                DOM.toggleDataButton.disabled = status !== true;
+                if (status === false) document.getElementById('device-info').textContent = 'Disconnected';
+                FirmwareLoader.render();
+                if (status === true) {
+                    DOM.statusIndicator.classList.remove('connecting');
+                    DOM.statusIndicator.classList.add('connected');
+                    DOM.connectionStatus.textContent = RingController.device?.name || 'Connected';
+                    DOM.connectButton.title = DOM.connectButton.ariaLabel = 'Disconnect ring';
+                } else if (status === 'connecting') {
+                    DOM.statusIndicator.classList.remove('connected');
+                    DOM.statusIndicator.classList.add('connecting');
+                    DOM.connectionStatus.textContent = 'Connecting...';
+                    DOM.connectButton.title = DOM.connectButton.ariaLabel = 'Connect ring';
+                } else {
+                    DOM.statusIndicator.classList.remove('connected', 'connecting');
+                    DOM.connectionStatus.textContent = 'Disconnected';
+                    DOM.connectButton.title = DOM.connectButton.ariaLabel = 'Connect ring';
+                }
+            },
+
+            logLimit: 1000,
+            logEntries: [],
+            latestLogs: new Map(),
+            logMode: 'stream',
+
+            logPacket(channel, label, hex) {
+                const opcode = hex.slice(0, 2).toUpperCase();
+                const subtype = ['A1', '69', '73'].includes(opcode) ? hex.slice(2, 4).toUpperCase() : '';
+                this.addLog(`${label} [${opcode}${subtype}]: ${hex}`, `${channel}:${opcode}${subtype}`);
+            },
+
+            addLog(message, type = message.split(':', 1)[0]) {
+                const time = Utils.formatTime();
+                const line = `${time} : ${message}`;
+                this.logEntries.push(line);
+                if (this.logEntries.length > this.logLimit) this.logEntries.shift();
+
+                let entry = this.latestLogs.get(type);
+                const changed = entry?.message !== message;
+                if (changed) {
+                    if (!entry) {
+                        entry = { row: document.createElement('div') };
+                        this.latestLogs.set(type, entry);
+                        if (this.logMode === 'latest') DOM.log.append(entry.row);
+                        if (this.latestLogs.size > 80) {
+                            const oldest = this.latestLogs.keys().next().value;
+                            this.latestLogs.get(oldest).row.remove();
+                            this.latestLogs.delete(oldest);
+                        }
+                    }
+                    entry.message = message;
+                    entry.row.textContent = line;
+                }
+
+                if (this.logMode === 'stream') {
+                    const atEnd = DOM.log.scrollHeight - DOM.log.clientHeight - DOM.log.scrollTop < 12;
+                    const row = document.createElement('div');
+                    row.textContent = line;
+                    DOM.log.append(row);
+                    if (DOM.log.childElementCount > this.logLimit) DOM.log.firstElementChild.remove();
+                    if (atEnd) DOM.log.scrollTop = DOM.log.scrollHeight;
+                }
+            },
+
+            setLogMode(mode) {
+                this.logMode = mode;
+                if (mode === 'latest') {
+                    DOM.log.replaceChildren(...Array.from(this.latestLogs.values(), entry => entry.row));
+                } else {
+                    const rows = this.logEntries.map(line => {
+                        const row = document.createElement('div');
+                        row.textContent = line;
+                        return row;
+                    });
+                    DOM.log.replaceChildren(...rows);
+                }
+                DOM.log.scrollTop = mode === 'latest' ? 0 : DOM.log.scrollHeight;
+            },
+
+            async requestHeartRate() {
+                if (!RingController.isConnected) {
+                    UI.addLog('Connect the ring before measuring heart rate');
+                    return;
+                }
+                const button = document.getElementById('heart-toggle');
+                button.textContent = 'Stop BPM';
+                button.setAttribute('aria-pressed', 'true');
+                document.getElementById('heart-rate-time').textContent = 'Measuring…';
+                const timeout = setTimeout(() => {
+                    void UI.stopHeartRate(true);
+                    document.getElementById('heart-rate-time').textContent = 'No reading';
+                    UI.addLog('Heart rate measurement timed out');
+                }, 45000);
+                RingController.heartRateTimer = timeout;
+                try {
+                    if (RingController.rawDataEnabled) await BLE.setRawMonitoring(false);
+                    else await BLE.sendDataArray(Utils.hexToBytes('A102'));
+                    if (RingController.heartRateTimer === timeout) {
+                        await BLE.sendDataArray(Utils.hexToBytes('690101'), 'settings');
+                    }
+                } catch (error) {
+                    if (RingController.heartRateTimer === timeout) UI.stopHeartRate();
+                    UI.addLog(`Heart rate request failed: ${error.message}`);
+                }
+            },
+
+            async stopHeartRate(sendStop = false) {
+                clearTimeout(RingController.heartRateTimer);
+                RingController.heartRateTimer = null;
+                const button = document.getElementById('heart-toggle');
+                button.textContent = 'Start BPM';
+                button.setAttribute('aria-pressed', 'false');
+                DOM.heartRateCard.classList.remove('active');
+                if (sendStop && RingController.isConnected) {
+                    try { await BLE.sendDataArray(Utils.hexToBytes('6A010000'), 'standard'); }
+                    catch (error) { UI.addLog(`Heart rate stop failed: ${error.message}`); }
+                }
+            },
+
+            stopActivityMonitoring() {
+                clearInterval(RingController.activityTimer);
+                RingController.activityTimer = null;
+                const button = document.getElementById('activity-toggle');
+                button.textContent = 'Start activity';
+                button.setAttribute('aria-pressed', 'false');
+                for (const card of [DOM.stepsCard, DOM.caloriesCard, DOM.distanceCard]) {
+                    card.classList.remove('active');
+                }
+            },
+
+            async copyLog() {
+                const status = document.getElementById('log-copy-status');
+                const count = this.logEntries.length;
+                if (!count) {
+                    status.textContent = 'Log is empty';
+                    return;
+                }
+                try {
+                    await navigator.clipboard.writeText(this.logEntries.join('\n'));
+                    status.textContent = `Copied ${count.toLocaleString()} log lines`;
+                } catch {
+                    status.textContent = 'Could not copy log';
+                }
+            },
+
+            // Clear log
+            clearLog() {
+                this.logEntries.length = 0;
+                this.latestLogs.clear();
+                DOM.log.replaceChildren();
+                document.getElementById('log-copy-status').textContent = '';
+            },
+
+            // Update metric value
+            updateMetric(id, value, unit = '') {
+                Signals.record({[id]: Number(value)});
+                const valueElement = document.getElementById(`${id}-value`);
+                const timeElement = document.getElementById(`${id}-time`);
+
+                if (valueElement) {
+                    valueElement.textContent = value;
+                }
+
+                if (timeElement) {
+                    timeElement.textContent = Utils.formatTime();
+                }
+            },
+
+            // Update heart rate values
+            updateHeartRateValues(values) {
+                if (!values || values.length === 0) {
+                    return;
+                }
+
+                const avgValue = Math.round(values.reduce((sum, val) => sum + val, 0) / values.length);
+                this.updateMetric('heart-rate', avgValue, 'bpm');
+
+                // Update MIDI data
+                this.updateMIDIData('hr', avgValue);
+
+                // Map heart rate to MIDI (typically 40-180 bpm)
+                const hrMidi = Math.round((avgValue / 180) * 127);
+                MIDI.startInterpolation('hr', hrMidi);
+            },
+
+            // Update accelerometer data
+            updateAccelerometerData(x, y, z, xG, yG, zG) {
+                if (!RingController.rawDataEnabled) {
+                    return;
+                }
+
+                AccelPacketRate.record(x, y, z);
+                GestureLearning.sample(xG, yG, zG);
+
+                // Update raw value history for interpolation
+                if (RingController.currentRawValues.x !== null) {
+                    RingController.lastRawValues.x = RingController.currentRawValues.x;
+                    RingController.lastRawValues.y = RingController.currentRawValues.y;
+                    RingController.lastRawValues.z = RingController.currentRawValues.z;
+                    RingController.lastUpdateTime = Date.now();
+                }
+
+                RingController.currentRawValues.x = x;
+                RingController.currentRawValues.y = y;
+                RingController.currentRawValues.z = z;
+
+                if (RingController.lastRawValues.x === null) {
+                    RingController.lastRawValues.x = x;
+                    RingController.lastRawValues.y = y;
+                    RingController.lastRawValues.z = z;
+                    RingController.lastUpdateTime = Date.now();
+                }
+
+                // Update raw values display
+                document.getElementById('raw-x').textContent = x;
+                document.getElementById('raw-y').textContent = y;
+                document.getElementById('raw-z').textContent = z;
+                document.getElementById('raw-x-g').textContent = xG.toFixed(2);
+                document.getElementById('raw-y-g').textContent = yG.toFixed(2);
+                document.getElementById('raw-z-g').textContent = zG.toFixed(2);
+
+                // Map G values to MIDI range (0-127)
+                const xMidi = Signals.map("x", xG);
+                const yMidi = Signals.map("y", yG);
+                const zMidi = Signals.map("z", zG);
+                Signals.record({
+                    x: xG, y: yG, z: zG,
+                    xSmooth: Signals.filtered.x, ySmooth: Signals.filtered.y, zSmooth: Signals.filtered.z
+                });
+
+                // Update MIDI data
+                this.updateMIDIData('x', xG.toFixed(2) + 'G', xMidi);
+                this.updateMIDIData('y', yG.toFixed(2) + 'G', yMidi);
+                this.updateMIDIData('z', zG.toFixed(2) + 'G', zMidi);
+
+                // Send to MIDI if mapped
+                MIDI.startInterpolation('x', xMidi);
+                MIDI.startInterpolation('y', yMidi);
+                MIDI.startInterpolation('z', zMidi);
+            },
+
+            // Update blood data
+            updateBloodData(raw, max1, max2, max3) {
+                if (!RingController.rawDataEnabled) {
+                    return;
+                }
+
+                Signals.record({blood:raw, bloodMax:max1});
+            },
+
+            // Update HRS data
+            updateHRSData(raw, max, min, diff) {
+                if (!RingController.rawDataEnabled) {
+                    return;
+                }
+
+                Signals.record({hrs:raw, hrsMax:max, hrsMin:min, hrsDiff:diff});
+            },
+
+            // Update MIDI data display
+            updateMIDIData(param, data, value = null) {
+                const dataElement = document.getElementById(`midi-${param}-data`);
+                const valueElement = document.getElementById(`midi-${param}-value`);
+
+                if (dataElement) {
+                    dataElement.textContent = data;
+                }
+
+                if (valueElement && value !== null) {
+                    valueElement.textContent = value;
+                }
+            },
+
+            // Start interpolation for accelerometer data
+            startInterpolation() {
+                if (RingController.interpTimerId) {
+                    clearInterval(RingController.interpTimerId);
+                }
+
+                RingController.interpTimerId = setInterval(() => this.updateInterpolatedValues(), 50);
+            },
+
+            // Stop interpolation
+            stopInterpolation() {
+                if (RingController.interpTimerId) {
+                    clearInterval(RingController.interpTimerId);
+                    RingController.interpTimerId = null;
+                }
+
+                document.getElementById('interp-x').textContent = '--';
+                document.getElementById('interp-y').textContent = '--';
+                document.getElementById('interp-z').textContent = '--';
+            },
+
+            // Update interpolated values
+            updateInterpolatedValues() {
+                if (RingController.lastRawValues.x == null || RingController.currentRawValues.x == null || !RingController.lastUpdateTime) {
+                    return;
+                }
+
+                const now = Date.now();
+                const elapsed = now - RingController.lastUpdateTime;
+                const progress = Math.min(elapsed / RingController.interpInterval, 1);
+
+                const interpX = Math.round(RingController.lastRawValues.x + (RingController.currentRawValues.x - RingController.lastRawValues.x) * progress);
+                const interpY = Math.round(RingController.lastRawValues.y + (RingController.currentRawValues.y - RingController.lastRawValues.y) * progress);
+                const interpZ = Math.round(RingController.lastRawValues.z + (RingController.currentRawValues.z - RingController.lastRawValues.z) * progress);
+
+                document.getElementById('interp-x').textContent = interpX;
+                document.getElementById('interp-y').textContent = interpY;
+                document.getElementById('interp-z').textContent = interpZ;
+                Signals.record({
+                    xInterp: Utils.convertRawToG(interpX),
+                    yInterp: Utils.convertRawToG(interpY),
+                    zInterp: Utils.convertRawToG(interpZ)
+                });
+            },
+
+            // Initialize UI event listeners
+            initEventListeners() {
+                // Connect button
+                DOM.connectButton.addEventListener('click', () => BLE.connect());
+                const reboot = document.getElementById('rebootButton');
+                reboot.addEventListener('click', async () => {
+                    if (!RingController.isConnected || FirmwareLoader.active) return;
+                    reboot.disabled = true;
+                    try {
+                        UI.addLog('Sending reboot command');
+                        await BLE.sendDataArray(Utils.hexToBytes('08'));
+                        UI.addLog('Reboot write completed. Watch for the ring to disconnect.');
+                    } catch (error) {
+                        UI.addLog(`Reboot command failed: ${error.message}`);
+                    } finally {
+                        reboot.disabled = !RingController.isConnected;
+                    }
+                });
+
+                // Toggle data button
+                DOM.toggleDataButton.addEventListener('click', () => BLE.toggleRawDataAndGesture());
+
+                // Clear log button
+                DOM.clearLogButton.addEventListener('click', () => this.clearLog());
+                document.getElementById('copyLogButton').addEventListener('click', () => void this.copyLog());
+                document.getElementById('log-mode').addEventListener('change', event => this.setLogMode(event.target.value));
+
+                // Interpolation interval
+                DOM.interpInterval.addEventListener('change', () => {
+                    RingController.interpInterval = parseInt(DOM.interpInterval.value);
+                    if (isNaN(RingController.interpInterval) || RingController.interpInterval < 10) {
+                        RingController.interpInterval = 1000;
+                        DOM.interpInterval.value = 1000;
+                    }
+                    RingController.noteDuration = RingController.interpInterval;
+                });
+
+                const sendCommandInput = async () => {
+                    if (!RingController.isConnected) { UI.addLog('Connect a ring before sending commands'); return; }
+                    const command=DOM.cmdSTXT.value.replace(/\s+/g,'').toUpperCase(), data=DOM.cmdTXTdata.value.replace(/\s+/g,'').toUpperCase();
+                    const framed=document.getElementById('command-type').value==='framed';
+                    if (!/^(?:[0-9A-F]{2})+$/.test(command) || !/^(?:[0-9A-F]{2})*$/.test(data) || (framed && command.length!==2) || (!framed && (command.length+data.length)>30)) { UI.addLog('Invalid hex: use complete bytes; settings allows 15 bytes total, framed requires one command byte.'); return; }
+                    const hex=command+data;
+                    try {
+                        if(framed) { await BLE.sendCommand(command,data); return; }
+                        if (hex === 'A10404' || hex === 'A102') await BLE.setRawMonitoring(hex === 'A10404');
+                        else await BLE.sendDataArray(Utils.hexToBytes(hex));
+                    } catch(error) { UI.addLog(`Command failed: ${error.message}`); }
+                };
+                const commandPanel = document.getElementById('system-log');
+                document.addEventListener('keydown', event => {
+                    if (event.defaultPrevented || event.isComposing || event.key !== 'Enter' || !commandPanel.open) return;
+                    const commandField = event.target === DOM.cmdSTXT || event.target === DOM.cmdTXTdata;
+                    const shortcut = event.metaKey && !event.altKey && !event.ctrlKey && !event.shiftKey;
+                    const plainEnter = commandField && !event.metaKey && !event.altKey && !event.ctrlKey && !event.shiftKey;
+                    if (!shortcut && !plainEnter) return;
+                    event.preventDefault();
+                    if (!event.repeat) DOM.sendArrayButton.click();
+                });
+                DOM.sendArrayButton.addEventListener('click', sendCommandInput);
+
+                // Metric card click handlers
+                DOM.batteryCard.addEventListener('click', async () => {
+                    if (!RingController.isConnected) return;
+                    try { await BLE.sendDataArray(Utils.hexToBytes('03')); }
+                    catch (error) { UI.addLog(`Battery request failed: ${error.message}`); }
+                });
+
+                document.getElementById('heart-toggle').addEventListener('click', () => {
+                    if (RingController.heartRateTimer !== null) void UI.stopHeartRate(true);
+                    else void UI.requestHeartRate();
+                });
+
+                // Activity data cards
+                const requestActivity = () => {
+                    if (RingController.activityTimer) {
+                        UI.stopActivityMonitoring();
+                        return;
+                    }
+                    if (!RingController.isConnected) {
+                        UI.addLog('Connect the ring before monitoring activity');
+                        return;
+                    }
+
+                    let pending = false;
+                    const poll = async () => {
+                        if (pending || !RingController.isConnected) return;
+                        pending = true;
+                        try {
+                            if (RingController.lastLiveActivity === null || Date.now() - RingController.lastLiveActivity > 15000) {
+                                await BLE.requestActivityLog();
+                            }
+                        } catch (error) {
+                            UI.addLog(`Activity request failed: ${error.message}`);
+                        } finally {
+                            pending = false;
+                        }
+                    };
+
+                    for (const card of [DOM.stepsCard, DOM.caloriesCard, DOM.distanceCard]) {
+                        card.classList.add('active');
+                    }
+                    RingController.activityTimer = setInterval(poll, 5000);
+                    const button = document.getElementById('activity-toggle');
+                    button.textContent = 'Stop activity';
+                    button.setAttribute('aria-pressed', 'true');
+                    UI.addLog('Monitoring live activity notifications and polling today’s activity log');
+                    void poll();
+                };
+
+                // Link all activity cards to the same handler
+                document.getElementById('activity-toggle').addEventListener('click', requestActivity);
+                DOM.caloriesCard.addEventListener('click', requestActivity);
+                DOM.distanceCard.addEventListener('click', requestActivity);
+
+                // Clear monitoring button
+                DOM.clearMonitoringButton.addEventListener('click', async () => {
+                    await UI.stopHeartRate(true);
+
+                    // Clear activity monitoring
+                    UI.stopActivityMonitoring();
+
+                    UI.addLog('All monitoring cleared');
+                });
+
+                // History data buttons
+                DOM.getHeartHistoryButton.addEventListener('click', async () => {
+                    Records.select('heart');
+                    UI.addLog('Requesting heart rate history...');
+                    await Records.requestHeart();
+                });
+
+                DOM.getStepHistoryButton.addEventListener('click', async () => {
+                    Records.select('steps');
+                    UI.addLog('Requesting step history...');
+                    document.getElementById('record-probe').textContent = 'Waiting for today’s activity log…';
+                    await BLE.requestActivityLog(true);
+                });
+
+                DOM.getSpo2HistoryButton.addEventListener('click', async () => {
+                    Records.select('spo2');
+                    document.getElementById('record-probe').textContent = 'Sent experimental SpO₂ query. Check the system log for replies.';
+                    UI.addLog('Requesting SpO2 history...');
+                    await BLE.sendDataArray(Utils.hexToBytes('7303'));
+                });
+
+                DOM.getSportHistoryButton.addEventListener('click', async () => {
+                    Records.select('sport');
+                    document.getElementById('record-probe').textContent = 'Sent experimental Sport query. Check the system log for replies.';
+                    UI.addLog('Requesting sport history...');
+                    await BLE.sendDataArray(Utils.hexToBytes('7306'));
+                });
+            }
+        };
+
+        // MIDI functionality
+        const MIDI = {
+            // Initialize MIDI
+            init() {
+                if (navigator.requestMIDIAccess) {
+                    navigator.requestMIDIAccess()
+                        .then(midiAccess => {
+                            RingController.midi = midiAccess;
+                            this.updateDevices();
+
+                            // Listen for device changes
+                            midiAccess.addEventListener('statechange', () => this.updateDevices());
+
+                            // Set up MIDI controls
+                            this.initControls();
+                        })
+                        .catch(error => {
+                            UI.addLog(`Failed to get MIDI access: ${error.message}`);
+                        });
+                } else {
+                    UI.addLog('WebMIDI not supported in this browser');
+                }
+            },
+
+            // Update MIDI devices list
+            updateDevices() {
+                const selectElement = DOM.midiOutput;
+                const currentSelection = selectElement.value;
+
+                // Clear existing options except the "none" option
+                while (selectElement.options.length > 1) {
+                    selectElement.remove(1);
+                }
+
+                // Add all available outputs
+                if (RingController.midi) {
+                    for (const [id, output] of RingController.midi.outputs) {
+                        const option = document.createElement('option');
+                        option.value = id;
+                        option.text = output.name;
+                        selectElement.add(option);
+
+                        // If this was previously selected, reselect it
+                        if (id === currentSelection) {
+                            selectElement.value = id;
+                        }
+                    }
+                }
+            },
+
+            // Initialize MIDI controls
+            initControls() {
+                DOM.midiChannel.addEventListener('change', function () {
+                    RingController.midiChannel = parseInt(this.value);
+                });
+
+                DOM.midiOutput.addEventListener('change', function () {
+                    const selectedId = this.value;
+                    RingController.midiOutput = selectedId === 'none' ? null : RingController.midi.outputs.get(selectedId);
+                });
+            },
+
+            // Send MIDI CC message
+            sendCC(cc, value) {
+                if (!RingController.midiOutput) {
+                    return;
+                }
+
+                // Only send if value has changed
+                const key = `cc-${cc}`;
+                if (RingController.lastMIDIValues[key] === value) {
+                    return;
+                }
+
+                // Ensure value is in MIDI range (0-127)
+                value = Math.max(0, Math.min(127, Math.round(value)));
+
+                // Format: [status byte (0xB0 + channel), control number, control value]
+                const message = [0xB0 + parseInt(RingController.midiChannel), cc, value];
+
+                try {
+                    RingController.midiOutput.send(message);
+                    RingController.lastMIDIValues[key] = value;
+                } catch (error) {
+                    UI.addLog(`MIDI send error: ${error.message}`);
+                }
+            },
+
+            // Send MIDI Note message
+            sendNote(note, velocity = 127) {
+                if (!RingController.midiOutput) {
+                    return;
+                }
+
+                note = Math.max(0, Math.min(127, Math.round(note)));
+                const output = RingController.midiOutput;
+                const noteOn = [0x90 + parseInt(RingController.midiChannel), note, velocity];
+                const noteOff = [0x80 + parseInt(RingController.midiChannel), note, 0];
+
+                try {
+                    output.send(noteOn);
+                    output.send(noteOff, performance.now() + RingController.noteDuration);
+                } catch (error) {
+                    UI.addLog(`MIDI note error: ${error.message}`);
+                }
+            },
+
+            // Start MIDI interpolation for a parameter
+            startInterpolation(param, targetValue) {
+                const typeSelect = document.getElementById(`midi-${param}-type`);
+                const ccInput = document.getElementById(`midi-${param}-cc`);
+                const interpEnabled = document.getElementById(`midi-${param}-interp`);
+
+                if (!ccInput || !ccInput.value) {
+                    return;
+                }
+
+                const midiNum = parseInt(ccInput.value);
+                const eventType = typeSelect ? typeSelect.value : 'cc';
+
+                // Initialize current value if not set
+                if (RingController.midiCurrentValues[param] === undefined) {
+                    RingController.midiCurrentValues[param] = 0;
+                }
+
+                // Store target value
+                RingController.midiTargetValues[param] = targetValue;
+
+                if (eventType === 'note') {
+                    // For note events, just trigger the note
+                    this.sendNote(midiNum, targetValue);
+                    document.getElementById(`midi-${param}-value`).textContent = targetValue;
+                    return;
+                }
+
+                // CC handling
+                if (!interpEnabled || !interpEnabled.checked) {
+                    // If not interpolating, send CC value directly
+                    RingController.midiCurrentValues[param] = targetValue;
+                    this.sendCC(midiNum, targetValue);
+                    document.getElementById(`midi-${param}-value`).textContent = targetValue;
+                    return;
+                }
+
+                // Stop existing interpolation if running
+                if (RingController.midiInterpolationTimers[param]) {
+                    clearInterval(RingController.midiInterpolationTimers[param]);
+                }
+
+                // Start new interpolation timer
+                RingController.midiInterpolationTimers[param] = setInterval(() => {
+                    if (RingController.midiCurrentValues[param] < RingController.midiTargetValues[param]) {
+                        RingController.midiCurrentValues[param]++;
+                    } else if (RingController.midiCurrentValues[param] > RingController.midiTargetValues[param]) {
+                        RingController.midiCurrentValues[param]--;
+                    } else {
+                        // Target reached, stop timer
+                        clearInterval(RingController.midiInterpolationTimers[param]);
+                        RingController.midiInterpolationTimers[param] = null;
+                        return;
+                    }
+
+                    // Send current CC value
+                    this.sendCC(midiNum, RingController.midiCurrentValues[param]);
+                    document.getElementById(`midi-${param}-value`).textContent = RingController.midiCurrentValues[param];
+                }, 10); // Update every 10ms for smooth interpolation
+            }
+        };
+
+
+        const Records = {
+            rows: new Map(),
+            frame: null,
+            add(series, time, value, source) {
+                if (!Number.isFinite(time) || !Number.isFinite(value) || time <= 0) return;
+                this.rows.set(JSON.stringify([series, time, source]), {series, time, value, source});
+                this.schedule();
+            },
+            replaceActivity(rows) {
+                document.getElementById('record-probe').textContent = rows.length ? `Activity log: ${rows.length} intervals today.` : 'Ring replied with no activity intervals for today.';
+                const source = 'Today’s activity intervals';
+                for (const [key, row] of this.rows) {
+                    if (row.source === source) this.rows.delete(key);
+                }
+                for (const row of rows) {
+                    const date = new Date();
+                    date.setHours(0, row.slot * 15, 0, 0);
+                    for (const series of ['steps', 'calories', 'distance']) {
+                        this.add(series, date.getTime(), row[series], source);
+                    }
+                }
+                this.schedule();
+            },
+            heartRead: null,
+            async requestHeart() {
+                if (this.heartRead) return;
+                const day = new Date();
+                day.setHours(0, 0, 0, 0);
+                const request = new Uint8Array(5);
+                request[0] = 0x15;
+                new DataView(request.buffer).setUint32(1, Math.floor(day.getTime() / 1000) - day.getTimezoneOffset() * 60, true);
+                const status = document.getElementById('record-probe');
+                status.textContent = 'Waiting for today’s heart rate log…';
+                const read = {day, blocks: new Map(), count: 0, interval: 5};
+                this.heartRead = read;
+                read.timer = setTimeout(() => {
+                    this.heartRead = null;
+                    status.textContent = 'No complete heart rate log reply.';
+                }, 8000);
+                try { await BLE.sendDataArray(request, 'standard'); }
+                catch (error) {
+                    clearTimeout(read.timer);
+                    this.heartRead = null;
+                    status.textContent = `Heart rate log request failed: ${error.message}`;
+                }
+            },
+            readHeartPacket(packet) {
+                const read = this.heartRead;
+                if (!read) return;
+                const index = packet[1];
+                if (index === 0) {
+                    read.count = packet[2];
+                    read.interval = packet[3] || 5;
+                    read.blocks.clear();
+                    return;
+                }
+                if (index !== 255 && (!read.count || index >= read.count)) return;
+                if (index !== 255) {
+                    read.blocks.set(index, packet.slice(index === 1 ? 6 : 2, 15));
+                    if (read.blocks.size !== read.count - 1) return;
+                }
+                clearTimeout(read.timer);
+                this.heartRead = null;
+                const values = [...read.blocks].sort(([a], [b]) => a - b).flatMap(([, bytes]) => Array.from(bytes));
+                let count = 0;
+                values.slice(0, Math.ceil(1440 / read.interval)).forEach((value, slot) => {
+                    if (value === 0 || value === 255) return;
+                    const time = new Date(read.day);
+                    time.setMinutes(slot * read.interval);
+                    if (time.getTime() > Date.now()) return;
+                    this.add('heart', time.getTime(), value, 'Daily heart rate');
+                    count++;
+                });
+                document.getElementById('record-probe').textContent = count ? `Heart rate log: ${count} readings today.` : 'Ring replied with no heart rate readings for today.';
+            },
+            select(series) {
+                document.getElementById('record-series').value = series;
+                this.schedule();
+            },
+            init() {
+                for (const id of ['record-series', 'record-from', 'record-through']) {
+                    document.getElementById(id).addEventListener('change', () => this.schedule());
+                }
+                document.getElementById('stored-records').addEventListener('toggle', () => this.schedule());
+            },
+            schedule() {
+                if (this.frame !== null) return;
+                this.frame = requestAnimationFrame(() => {
+                    this.frame = null;
+                    this.draw();
+                });
+            },
+            draw() {
+                const series = document.getElementById('record-series').value;
+                const from = document.getElementById('record-from').value;
+                const through = document.getElementById('record-through').value;
+                const start = from ? new Date(from + 'T00:00:00').getTime() : -Infinity;
+                const end = through ? new Date(through + 'T00:00:00') : null;
+                if (end) end.setDate(end.getDate() + 1);
+                const rows = [...this.rows.values()].filter(row => row.series === series && row.time >= start && (!end || row.time < end)).sort((a,b) => a.time-b.time);
+                const table = document.getElementById('record-rows');
+                table.replaceChildren();
+                for (const row of rows) {
+                    const tr = table.insertRow();
+                    for (const value of [new Date(row.time).toLocaleString(), Number(row.value.toFixed(2)), row.source]) {
+                        tr.insertCell().textContent = value;
+                    }
+                }
+                document.getElementById('record-count').textContent = rows.length ? `${rows.length} records` : 'No matching records. Request data or change the filters.';
+                const canvas = document.getElementById('record-chart');
+                const ctx = canvas.getContext('2d');
+                const {width, height} = canvas;
+                ctx.clearRect(0,0,width,height);
+                if (!rows.length) return;
+                let low = rows[0].value, high = low;
+                for (const {value} of rows) {
+                    low = Math.min(low, value);
+                    high = Math.max(high, value);
+                }
+                const first = rows[0].time, last = rows.at(-1).time;
+                const style = getComputedStyle(canvas);
+                ctx.fillStyle = style.getPropertyValue('--muted').trim();
+                ctx.font = '15px system-ui';
+                ctx.textAlign = 'left';
+                ctx.fillText(String(Number(high.toFixed(2))), 4, 16);
+                if (low !== high) ctx.fillText(String(Number(low.toFixed(2))), 4, height - 25);
+                ctx.fillText(new Date(first).toLocaleString(), 62, height - 5);
+                if (last !== first) {
+                    ctx.textAlign = 'right';
+                    ctx.fillText(new Date(last).toLocaleString(), width - 12, height - 5);
+                }
+                ctx.fillStyle = style.getPropertyValue('--accent').trim();
+                for (const {time, value} of rows) {
+                    const x = last === first ? width / 2 : 62 + (time-first)/(last-first)*(width-74);
+                    const y = low === high ? height / 2 : 16 + (high-value)/(high-low)*(height-42);
+                    ctx.beginPath();
+                    ctx.arc(x, y, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        };
+
+        const Signals = {
+            settings: { x: {min:-4,max:4,smoothing:0}, y: {min:-4,max:4,smoothing:0}, z: {min:-4,max:4,smoothing:0} },
+            filtered: {}, samples: {},
+            streams: {
+                x:['X raw','G','#d26b4a'], y:['Y raw','G','#168c82'], z:['Z raw','G','#596ac2'],
+                xSmooth:['X smooth','G','#d26b4a',[7,4]], ySmooth:['Y smooth','G','#168c82',[7,4]], zSmooth:['Z smooth','G','#596ac2',[7,4]],
+                xInterp:['X interp','G','#d26b4a',[2,4]], yInterp:['Y interp','G','#168c82',[2,4]], zInterp:['Z interp','G','#596ac2',[2,4]],
+                blood:['Blood raw','', '#b54f75'], bloodMax:['Blood max','', '#b78449'],
+                hrs:['HRS raw','', '#974bb7'], hrsMax:['HRS max','', '#7756a3'], hrsMin:['HRS min','', '#6576ad'], hrsDiff:['HRS diff','', '#407891'],
+                battery:['Battery','%', '#748425'], 'heart-rate':['Heart rate','bpm','#cf5671'], steps:['Steps','', '#917232'], calories:['Calories','kcal','#c58639'], distance:['Distance','m','#408b71'], gesture:['Gesture code','', '#666666']
+            },
+            plotGroups: {
+                'accel-chart': ['x', 'y', 'z', 'xSmooth', 'ySmooth', 'zSmooth', 'xInterp', 'yInterp', 'zInterp'],
+                'blood-chart': ['blood', 'bloodMax'],
+                'hrs-chart': ['hrs', 'hrsMax', 'hrsMin', 'hrsDiff'],
+                'gesture-chart': ['gesture']
+            },
+            frame: null,
+            windowMs: 120000,
+            init() {
+                const axis = document.getElementById('signal-axis'), min = document.getElementById('signal-min'), max = document.getElementById('signal-max'), smooth = document.getElementById('signal-smoothing'), status = document.getElementById('signal-status');
+                const show = () => { const v = this.settings[axis.value]; min.value=v.min; max.value=v.max; smooth.value=v.smoothing; document.getElementById('smooth-label').textContent=v.smoothing ? v.smoothing + '%' : 'Off'; status.textContent=''; };
+                axis.addEventListener('change', show);
+                const update = () => { const a=Number(min.value), b=Number(max.value); if (min.value === '' || max.value === '' || !Number.isFinite(a) || !Number.isFinite(b) || a >= b) { status.textContent='Enter a minimum smaller than the maximum. The last valid range is still active.'; return; } this.settings[axis.value]={min:a,max:b,smoothing:Number(smooth.value)}; delete this.filtered[axis.value]; show(); };
+                min.addEventListener('change', update); max.addEventListener('change', update); smooth.addEventListener('input', update);
+                document.getElementById('plot-window').addEventListener('change', event => {
+                    this.windowMs = Number(event.target.value) * 1000;
+                    this.draw();
+                });
+                const controls = document.getElementById('raw-data-section');
+                Object.entries(this.streams).forEach(([id, [label, unit, color]]) => {
+                    const item=document.createElement('label'); item.className='stream-chip';
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.dataset.stream = id;
+                    checkbox.checked = id === 'blood' || id === 'hrs';
+                    checkbox.addEventListener('change', () => this.draw());
+                    const name=document.createElement('span'); name.textContent=label; name.style.setProperty("--stream-color", color);
+                    const value=document.createElement('small'); value.id='stream-value-'+id; value.textContent='—';
+                    item.append(checkbox,name,value);
+                    const chart = Object.keys(this.plotGroups).find(key => this.plotGroups[key].includes(id)) || 'other-chart';
+                    document.getElementById(chart.replace('-chart', '-streams')).append(item);
+                });
+                document.getElementById('streams-all').addEventListener('click',()=>{ controls.querySelectorAll('.stream-controls input').forEach(el=>el.checked=true); this.draw(); });
+                document.getElementById('streams-none').addEventListener('click',()=>{ controls.querySelectorAll('.stream-controls input').forEach(el=>el.checked=false); this.draw(); });
+                this.draw();
+            },
+            map(axis, value) { const s=this.settings[axis], previous=this.filtered[axis]; const filtered=previous === undefined ? value : previous * s.smoothing/100 + value * (1-s.smoothing/100); this.filtered[axis]=filtered; return Math.round(Math.max(0,Math.min(127,(filtered-s.min)/(s.max-s.min)*127))); },
+            record(values) {
+                const now=Date.now();
+                RingLab.ingest(values);
+                Object.entries(values).forEach(([id,value])=>{ if(!this.streams[id] || !Number.isFinite(value)) return; const series=this.samples[id] || (this.samples[id]=[]); series.push({t:now,v:value}); while(series.length && (series[0].t < now-120000 || series.length>32000)) series.shift(); const label=document.getElementById('stream-value-'+id); if(label) label.textContent=Number(value.toFixed(2))+(this.streams[id][1] ? ' '+this.streams[id][1] : ''); });
+                this.draw();
+            },
+            draw() {
+                if (this.frame !== null) return;
+                this.frame = requestAnimationFrame(() => {
+                    this.frame = null;
+                    const now = Date.now();
+                    const selected = [...document.querySelectorAll('#raw-data-section .stream-controls input:checked')]
+                        .map(input => input.dataset.stream);
+                    for (const [chart, streams] of Object.entries(this.plotGroups)) {
+                        this.drawPlot(chart, selected.filter(id => streams.includes(id)), now);
+                    }
+                    const other = selected.filter(id => !Object.values(this.plotGroups).some(group => group.includes(id)));
+                    this.drawPlot('other-chart', other, now);
+                });
+            },
+            drawPlot(chart, selected, now) {
+                const canvas = document.getElementById(chart);
+                const ctx = canvas.getContext('2d');
+                const {width, height} = canvas;
+                const theme = getComputedStyle(canvas);
+                const left = 58;
+                const top = 14;
+                const bottom = height - 25;
+                const x = time => left + (1 - (now - time) / this.windowMs) * (width - left - 23);
+                ctx.clearRect(0, 0, width, height);
+                ctx.font = '14px system-ui';
+                ctx.fillStyle = theme.getPropertyValue('--muted').trim();
+                ctx.strokeStyle = theme.getPropertyValue('--border').trim();
+                ctx.lineWidth = 1;
+                ctx.textAlign = 'center';
+                const divisions = this.windowMs === 5000 ? 5 : 4;
+                for (let i = 0; i <= divisions; i++) {
+                    const offset = this.windowMs * (1 - i / divisions);
+                    const tick = x(now - offset);
+                    ctx.beginPath();
+                    ctx.moveTo(tick, top);
+                    ctx.lineTo(tick, bottom + 4);
+                    ctx.stroke();
+                    ctx.fillText(offset ? `−${offset / 1000}s` : 'Now', tick, height - 5);
+                }
+                ctx.textAlign = 'left';
+                const series = selected.map(id => {
+                    const points = (this.samples[id] || []).filter(point => point.t >= now - this.windowMs);
+                    let min = Infinity, max = -Infinity;
+                    for (const {v} of points) {
+                        min = Math.min(min, v);
+                        max = Math.max(max, v);
+                    }
+                    return {id, points, min, max};
+                }).filter(({points}) => points.length);
+                if (chart === 'blood-chart') {
+                    const raw = series.find(trace => trace.id === 'blood');
+                    const minimum = document.getElementById('blood-visible-min');
+                    minimum.textContent = raw ? 'Visible raw min ' + raw.min : '';
+                    minimum.hidden = !raw;
+                }
+                if (!series.length) {
+                    ctx.fillText(selected.length ? 'Waiting for samples…' : 'Select a stream to plot', 12, 26);
+                    return;
+                }
+                const sharedScale = chart !== 'other-chart';
+                const low = Math.min(...series.map(trace => trace.min));
+                const high = Math.max(...series.map(trace => trace.max));
+                if (sharedScale) {
+                    ctx.fillText(String(Number(high.toFixed(2))), 4, low === high ? height / 2 : top);
+                    if (low !== high) ctx.fillText(String(Number(low.toFixed(2))), 4, bottom);
+                }
+                for (const {id, points, min, max} of series) {
+                    const lower = sharedScale ? low : min;
+                    const upper = sharedScale ? high : max;
+                    const y = value => upper === lower ? height / 2 : bottom - (value - lower) / (upper - lower) * (bottom - top);
+                    if (id === 'gesture') {
+                        ctx.fillStyle = this.streams[id][2];
+                        for (const {t, v} of points) {
+                            ctx.beginPath();
+                            ctx.arc(x(t), y(v), 4, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                        continue;
+                    }
+                    ctx.strokeStyle = this.streams[id][2];
+                    ctx.setLineDash(this.streams[id][3] || []);
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    points.forEach(({t, v}, i) => {
+                        if (i === 0) ctx.moveTo(x(t), y(v));
+                        else ctx.lineTo(x(t), y(v));
+                    });
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    if (points.length === 1) {
+                        ctx.fillStyle = ctx.strokeStyle;
+                        ctx.fillRect(x(points[0].t) - 2, y(points[0].v) - 2, 4, 4);
+                    }
+                    if (id === 'blood') {
+                        ctx.setLineDash([5, 5]);
+                        ctx.beginPath();
+                        ctx.moveTo(x(points[0].t), y(min));
+                        ctx.lineTo(x(now), y(min));
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                    }
+                }
+            }
+        };
+
+        const AccelPacketRate = {
+            samples: [],
+            timer: null,
+            start() {
+                this.stop();
+                this.render();
+                this.timer = setInterval(() => this.render(), 500);
+            },
+            stop() {
+                clearInterval(this.timer);
+                this.timer = null;
+                this.samples.length = 0;
+                document.getElementById('accel-packet-rate').textContent = '—';
+            },
+            record(x, y, z, time = performance.now()) {
+                if (this.timer === null) return;
+                this.samples.push({time, x, y, z});
+            },
+            render(now = performance.now()) {
+                const oldest = this.samples.findIndex(sample => sample.time >= now - 10000);
+                if (oldest < 0) this.samples.length = 0;
+                else if (oldest > 0) this.samples.splice(0, oldest);
+                const output = document.getElementById('accel-packet-rate');
+                const span = this.samples.at(-1)?.time - this.samples[0]?.time;
+                if (!(span > 0)) {
+                    output.textContent = 'Waiting for packets';
+                    return;
+                }
+                let changed = 0;
+                for (let i = 1; i < this.samples.length; i++) {
+                    const {x, y, z} = this.samples[i];
+                    const previous = this.samples[i - 1];
+                    if (x !== previous.x || y !== previous.y || z !== previous.z) changed++;
+                }
+                const packets = ((this.samples.length - 1) * 1000 / span).toFixed(1);
+                const changes = (changed * 1000 / span).toFixed(1);
+                output.textContent = `${packets} packets/s · ${changes} XYZ changes/s`;
+            }
+        };
+
+        // Initialize application
+        document.addEventListener('DOMContentLoaded', () => {
+            const themeToggle = document.getElementById('theme-toggle');
+            const systemTheme = matchMedia('(prefers-color-scheme: dark)');
+            let themePreference = localStorage.getItem('ring-studio-theme');
+            const applyTheme = () => {
+                const dark = themePreference ? themePreference === 'dark' : systemTheme.matches;
+                document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+                themeToggle.setAttribute('aria-pressed', String(dark));
+                themeToggle.textContent = dark ? '☀' : '☾';
+                themeToggle.title = dark ? 'Switch to light mode' : 'Switch to dark mode';
+            };
+            applyTheme();
+            themeToggle.addEventListener('click', () => {
+                themePreference = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+                localStorage.setItem('ring-studio-theme', themePreference);
+                applyTheme();
+                Signals.draw();
+                Records.schedule();
+            });
+            systemTheme.addEventListener('change', () => {
+                applyTheme();
+                Signals.draw();
+                Records.schedule();
+            });
+            document.getElementById('system-log').addEventListener('toggle', event => {
+                if (event.currentTarget.open) DOM.log.scrollTop = DOM.log.scrollHeight;
+            });
+
+            // Initialize DOM references
+            DOM.init();
+            document.getElementById('read-device-info').addEventListener('click', () => BLE.readDeviceInfo());
+
+            const tabs = [...document.querySelectorAll('[data-pane]')];
+            for (const tab of tabs) tab.addEventListener('click', () => {
+                for (const item of tabs) {
+                    item.setAttribute('aria-pressed', String(item === tab));
+                    document.getElementById('pane-' + item.dataset.pane).hidden = item !== tab;
+                }
+                if (tab.dataset.pane === 'stream') { Signals.draw(); Records.schedule(); }
+                if (tab.dataset.pane !== 'lab') RingLab.stopCamera();
+            });
+            const log = document.getElementById('system-log');
+            log.open = localStorage.getItem('ring-studio-log-open') === 'true';
+            log.addEventListener('toggle', () => localStorage.setItem('ring-studio-log-open', String(log.open)));
+            FirmwareLoader.init();
+            GestureLearning.init();
+            RingLab.init();
+            UI.updateConnectionStatus(false);
+
+            // Set up UI event listeners
+            UI.initEventListeners();
+
+            Signals.init();
+            Records.init();
+            document.getElementById('command-search').addEventListener('input', event => {
+                const q = event.target.value.trim().toLowerCase();
+                document.querySelectorAll('#command-list li').forEach(item => item.hidden = !item.dataset.search.includes(q));
+            });
+            document.getElementById('command-list').addEventListener('click', event => {
+                const button = event.target.closest('button[data-command]');
+                if (button) { document.getElementById('command-type').value='settings'; DOM.cmdSTXT.value = button.dataset.command; DOM.cmdTXTdata.value=''; DOM.cmdSTXT.focus(); }
+            });
+            // Initialize MIDI
+            MIDI.init();
+
+            // Log initialization
+            UI.addLog('Ring Studio initialized');
+        });
+    </script>
+</body>
+
+</html>

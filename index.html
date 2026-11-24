@@ -531,7 +531,7 @@
             .studio-row input[type=file] { max-width: 100%; }
         }
     </style>
-    <link rel="stylesheet" href="ring-lab.css">
+    <link rel="stylesheet" href="ring-lab.css?v=d466f56c5d9c">
 </head>
 
 <body>
@@ -1189,16 +1189,16 @@
         </details>
     </details>
 
-    <script src="ring-gesture-monitor.js"></script>
-    <script src="ring-gestures.js"></script>
-    <script src="ring-firmware.js"></script>
-    <script src="ring-lab-signals.js"></script>
-    <script src="ring-lab-trajectory.js"></script>
-    <script src="ring-lab-synth.js"></script>
-    <script src="ring-lab-pose.js"></script>
-    <script src="ring-lab-calibration.js"></script>
-    <script src="ring-lab-view.js"></script>
-    <script src="ring-lab.js"></script>
+    <script src="ring-gesture-monitor.js?v=1a91ad4b3ab7"></script>
+    <script src="ring-gestures.js?v=fecffcc54bfc"></script>
+    <script src="ring-firmware.js?v=3df40bd28133"></script>
+    <script src="ring-lab-signals.js?v=fa3bcd68887f"></script>
+    <script src="ring-lab-trajectory.js?v=0466f3768786"></script>
+    <script src="ring-lab-synth.js?v=996871c07385"></script>
+    <script src="ring-lab-pose.js?v=87c8cde29b07"></script>
+    <script src="ring-lab-calibration.js?v=238d0340994e"></script>
+    <script src="ring-lab-view.js?v=a003f4cb19f7"></script>
+    <script src="ring-lab.js?v=e25ec863af70"></script>
     <script>
         // Global state variables
         const RingController = {
@@ -1537,6 +1537,11 @@
                     RingController.isConnected = true;
                     UI.updateConnectionStatus(true);
                     RingController.isConnecting = false;
+                    try {
+                        await this.setRawMonitoring(true);
+                    } catch (error) {
+                        UI.addLog(`Connected, but automatic streaming failed: ${error.message}. Use Start stream to retry.`);
+                    }
                     void this.readDeviceInfo();
 
                 } catch (error) {
@@ -2899,7 +2904,7 @@
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
                     checkbox.dataset.stream = id;
-                    checkbox.checked = id === 'blood' || id === 'hrs';
+                    checkbox.checked = ['x','y','z','blood','hrs'].includes(id);
                     checkbox.addEventListener('change', () => this.draw());
                     const name=document.createElement('span'); name.textContent=label; name.style.setProperty("--stream-color", color);
                     const value=document.createElement('small'); value.id='stream-value-'+id; value.textContent='—';

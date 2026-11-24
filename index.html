@@ -531,7 +531,7 @@
             .studio-row input[type=file] { max-width: 100%; }
         }
     </style>
-    <link rel="stylesheet" href="ring-lab.css?v=d466f56c5d9c">
+    <link rel="stylesheet" href="ring-lab.css?v=a5b301255496">
 </head>
 
 <body>
@@ -556,7 +556,7 @@
         <button type="button" data-pane="stream" aria-pressed="true" title="Live metrics, traces and stored records">Stream</button>
         <button type="button" data-pane="mapping" aria-pressed="false" title="MIDI routing and learned gestures">Mapping</button>
         <button type="button" data-pane="lab" aria-pressed="false">Gesture Lab</button>
-        <button type="button" data-pane="ink" aria-pressed="false">Ink</button>
+        <button type="button" data-pane="ink" aria-pressed="false">Drawing</button>
         <button type="button" data-pane="firmware" aria-pressed="false" title="Inspect and update ring firmware">Firmware</button>
     </nav>
     <main>
@@ -929,7 +929,7 @@
                     <button id="lab-stream" type="button" disabled>Start stream</button>
                     <button id="lab-demo" type="button" aria-pressed="false">Demo</button>
                     <button id="lab-center" type="button">Recenter</button>
-                    <button id="lab-open-ink" type="button">Open Ink</button>
+                    <button id="lab-open-ink" type="button">Open Drawing</button>
                 </div>
                 <div class="lab-stage-readouts">
                     <output id="lab-tilt">Tilt —</output>
@@ -1040,38 +1040,40 @@
     </div>
     <section id="pane-ink" hidden aria-labelledby="lab-ink-heading">
         <div class="lab-heading">
-            <h2 id="lab-ink-heading">Ink</h2>
+            <h2 id="lab-ink-heading">Drawing</h2>
             <div class="lab-line">
                 <output id="lab-ink-gate">Squeeze to draw</output>
                 <output id="lab-ink-gesture" aria-live="polite"></output>
                 <button id="lab-ink-zoom-out" type="button" aria-label="Zoom out of selected view">−</button>
                 <button id="lab-ink-zoom-in" type="button" aria-label="Zoom in on selected view">+</button>
                 <button id="lab-ink-pan-3d" type="button" aria-pressed="false">Pan 3D</button>
-                <button id="lab-ink-reset-view" type="button">Reset views</button>
-                <button id="lab-ink-expand" type="button" aria-pressed="false">Expand 3D</button>
+                <button id="lab-ink-reset-view" type="button">Reset view</button>
+                <label for="lab-drawing-plane">View</label><select id="lab-drawing-plane">
+                    <option value="3d">Free 3D</option><option value="front">Front · XY</option>
+                    <option value="back">Back · XY</option><option value="top">Top · XZ</option>
+                    <option value="bottom">Bottom · XZ</option><option value="side">Right · ZY</option>
+                    <option value="left">Left · ZY</option>
+                </select>
+                <button id="lab-drawing-camera" type="button" aria-pressed="false">Start webcam</button>
             </div>
         </div>
         <div id="lab-ink-views" class="lab-ink-views">
-            <section class="lab-panel lab-ink-panel" aria-label="Front view">
-                <h3>Front <small>X / Y</small></h3><canvas id="lab-ink-front" tabindex="0" aria-label="Front trajectory. Arrow keys pan. Plus and minus zoom."></canvas>
+            <section class="lab-panel lab-ink-panel lab-ink-orbit" aria-label="Drawing viewport">
+                <h3><span id="lab-drawing-view-name">Free 3D</span> <small>Drag to orbit · Shift-drag to pan</small></h3>
+                <canvas id="lab-ink-3d" tabindex="0" aria-label="Drawing trajectory. Arrow keys orbit. Shift and arrow keys pan. Plus and minus zoom."></canvas>
             </section>
-            <section class="lab-panel lab-ink-panel" aria-label="Top view">
-                <h3>Top <small>X / Z</small></h3><canvas id="lab-ink-top" tabindex="0" aria-label="Top trajectory. Arrow keys pan. Plus and minus zoom."></canvas>
-            </section>
-            <section class="lab-panel lab-ink-panel" aria-label="Side view">
-                <h3>Side <small>Z / Y</small></h3><canvas id="lab-ink-side" tabindex="0" aria-label="Side trajectory. Arrow keys pan. Plus and minus zoom."></canvas>
-            </section>
-            <section class="lab-panel lab-ink-panel lab-ink-orbit" aria-label="Free 3D view">
-                <h3>3D <small>Drag to orbit · Shift-drag to pan</small></h3>
-                <canvas id="lab-ink-3d" tabindex="0" aria-label="3D trajectory. Arrow keys orbit. Shift and arrow keys pan. Plus and minus zoom."></canvas>
+            <section id="lab-drawing-camera-panel" class="lab-panel lab-drawing-camera-panel" aria-label="Drawing webcam" hidden>
+                <video id="lab-drawing-video" autoplay muted playsinline aria-label="Live drawing webcam"></video>
+                <label class="lab-mirror"><input id="lab-drawing-mirror" type="checkbox" checked> Mirror</label>
             </section>
         </div>
+        <output id="lab-drawing-camera-status" aria-live="polite"></output>
         <div class="lab-panel lab-strip">
             <div class="lab-controls">
                 <label>Tracking<select id="lab-ink-mode"><option value="integrated">Integrated position</option><option value="relative">Damped motion</option></select></label>
                 <label id="lab-ink-gravity-label">Gravity estimate<select id="lab-ink-gravity"><option value="follow">Follow tilt</option><option value="fixed">Fixed during stroke</option></select></label>
-                <label id="lab-ink-gain-label" hidden>Ink sensitivity<input id="lab-ink-gain" type="number" min="4" max="48" step="2" value="24"></label>
-                <button id="lab-clear" type="button">Clear ink</button>
+                <label id="lab-ink-gain-label" hidden>Drawing sensitivity<input id="lab-ink-gain" type="number" min="4" max="48" step="2" value="24"></label>
+                <button id="lab-clear" type="button">Clear drawing</button>
                 <button id="lab-ink-calibrate" type="button">Calibrate rest</button>
                 <output id="lab-ink-distance"></output>
             </div>
@@ -1197,8 +1199,8 @@
     <script src="ring-lab-synth.js?v=996871c07385"></script>
     <script src="ring-lab-pose.js?v=87c8cde29b07"></script>
     <script src="ring-lab-calibration.js?v=238d0340994e"></script>
-    <script src="ring-lab-view.js?v=a003f4cb19f7"></script>
-    <script src="ring-lab.js?v=e25ec863af70"></script>
+    <script src="ring-lab-view.js?v=6de96e9c3850"></script>
+    <script src="ring-lab.js?v=6b92648b2b5a"></script>
     <script>
         // Global state variables
         const RingController = {
@@ -3109,6 +3111,7 @@
                 }
                 if (tab.dataset.pane === 'stream') { Signals.draw(); Records.schedule(); }
                 if (tab.dataset.pane !== 'lab') RingLab.stopCamera();
+                if (tab.dataset.pane !== 'ink') RingLab.stopDrawingCamera();
             });
             const log = document.getElementById('system-log');
             log.open = localStorage.getItem('ring-studio-log-open') === 'true';

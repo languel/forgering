@@ -505,12 +505,14 @@ const RingLab = {
     },
 
     initInkNavigation() {
-        const views = ['front','top','side','3d'];
+        const views = ['3d'];
         const select = view => {
             this.activeInkView = view;
             for (const id of views) this.ui['ink-'+id].parentElement.toggleAttribute('data-selected',id === view);
         };
         const reset = () => {
+            this.ui['drawing-plane'].value = '3d';
+            this.ui['drawing-view-name'].textContent = 'Free 3D';
             this.inkOrbit = {yaw:-Math.PI/4,pitch:.45};
             this.inkCameras = Object.fromEntries(views.map(id => [id,{zoom:1,x:0,y:0}]));
         };
@@ -523,6 +525,8 @@ const RingLab = {
             camera.zoom = next;
         };
         const turn = (yaw,pitch) => {
+            this.ui['drawing-plane'].value = '3d';
+            this.ui['drawing-view-name'].textContent = 'Free 3D';
             this.inkOrbit.yaw = (this.inkOrbit.yaw+yaw) % (2*Math.PI);
             this.inkOrbit.pitch = Math.max(-Math.PI*.49,Math.min(Math.PI*.49,this.inkOrbit.pitch+pitch));
         };
@@ -584,15 +588,71 @@ const RingLab = {
             reset();
             pan3D.setAttribute('aria-pressed','false');
         });
-        this.ui['ink-expand'].addEventListener('click',event => {
-            const button = event.currentTarget;
-            const expanded = this.ui['ink-views'].toggleAttribute('data-expanded');
-            if (expanded) select('3d');
-            button.setAttribute('aria-pressed',String(expanded));
-            button.textContent = expanded ? 'Show quad view' : 'Expand 3D';
+        this.ui['drawing-plane'].addEventListener('change',() => {
+            const plane = this.ui['drawing-plane'];
+            const angles = {front:[0,0],back:[Math.PI,0],top:[0,-Math.PI/2],bottom:[0,Math.PI/2],
+                side:[Math.PI/2,0],left:[-Math.PI/2,0],'3d':[-Math.PI/4,.45]};
+            const [yaw,pitch] = angles[plane.value];
+            this.inkOrbit = {yaw,pitch};
+            this.ui['drawing-view-name'].textContent = plane.selectedOptions[0].textContent;
         });
+        this.ui['drawing-camera'].addEventListener('click',() => {
+            if (this.drawingCameraRequest) this.stopDrawingCamera();
+            else void this.startDrawingCamera();
+        });
+        const mirror = () => this.ui['drawing-video'].toggleAttribute('data-mirror',this.ui['drawing-mirror'].checked);
+        this.ui['drawing-mirror'].addEventListener('change',mirror);
+        mirror();
+        window.addEventListener('pagehide',() => this.stopDrawingCamera());
         reset();
         select('3d');
+    },
+
+    async startDrawingCamera() {
+        const request = Symbol();
+        this.drawingCameraRequest = request;
+        const button = this.ui['drawing-camera'];
+        const status = this.ui['drawing-camera-status'];
+        button.textContent = 'Cancel webcam';
+        status.textContent = 'Waiting for camera permission…';
+        try {
+            if (!navigator.mediaDevices?.getUserMedia) throw new Error('Camera requires localhost or HTTPS in a supported browser.');
+            const stream = await navigator.mediaDevices.getUserMedia({audio:false,video:{width:{ideal:960},height:{ideal:720}}});
+            if (this.drawingCameraRequest !== request) {
+                stream.getTracks().forEach(track => track.stop());
+                return;
+            }
+            const video = this.ui['drawing-video'];
+            video.srcObject = stream;
+            stream.getVideoTracks()[0].addEventListener('ended',() => {
+                if (this.drawingCameraRequest === request) this.stopDrawingCamera('Webcam disconnected.');
+            },{once:true});
+            this.ui['drawing-camera-panel'].hidden = false;
+            this.ui['ink-views'].setAttribute('data-webcam','');
+            await video.play();
+            if (this.drawingCameraRequest !== request) return;
+            button.textContent = 'Stop webcam';
+            button.setAttribute('aria-pressed','true');
+            status.textContent = '';
+        } catch (error) {
+            if (this.drawingCameraRequest !== request) return;
+            const message = error.name === 'NotAllowedError' ? 'Allow webcam access in the browser to show the preview.' :
+                error.name === 'NotFoundError' ? 'No webcam found.' : 'Could not start webcam. Check whether another app is using it.';
+            this.stopDrawingCamera(message);
+        }
+    },
+
+    stopDrawingCamera(message = '') {
+        if (!this.drawingCameraRequest) return;
+        this.drawingCameraRequest = null;
+        const video = this.ui['drawing-video'];
+        video.srcObject?.getTracks().forEach(track => track.stop());
+        video.srcObject = null;
+        this.ui['drawing-camera-panel'].hidden = true;
+        this.ui['ink-views'].removeAttribute('data-webcam');
+        this.ui['drawing-camera'].textContent = 'Start webcam';
+        this.ui['drawing-camera'].setAttribute('aria-pressed','false');
+        this.ui['drawing-camera-status'].textContent = message;
     },
 
     renderInk(now) {
@@ -610,8 +670,7 @@ const RingLab = {
         const distance = Math.round(Math.hypot(...trajectory.position)*100);
         this.ui['ink-distance'].textContent = integrated && trajectory.points.length ? `≈ ${distance} cm from stroke start` : '';
         const extent = trajectory.points.reduce((max,{position}) => Math.max(max,Math.hypot(...position)),integrated ? .18 : 1.25);
-        const views = this.ui['ink-views'].hasAttribute('data-expanded') ? ['3d'] : ['front','top','side','3d'];
-        for (const view of views) this.view.drawInk(this.ui['ink-'+view],trajectory,extent,now,view,this.inkOrbit,this.inkCameras[view]);
+        this.view.drawInk(this.ui['ink-3d'],trajectory,extent,now,this.ui['drawing-plane'].value,this.inkOrbit,this.inkCameras['3d']);
     },
 
     record() {

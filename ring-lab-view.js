@@ -162,7 +162,10 @@ class RingLabView {
             switch (view) {
                 case 'front': return [x,y];
                 case 'top': return [x,z];
-                case 'side': return [z,y];
+                case 'side': return [-z,y];
+                case 'back': return [-x,y];
+                case 'bottom': return [x,-z];
+                case 'left': return [z,y];
                 default: return [x*cy-z*sy,y*cp-(x*sy+z*cy)*sp];
             }
         };

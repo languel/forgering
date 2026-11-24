@@ -321,6 +321,7 @@ const RingLab = {
     stopLive() {
         if (!this.signals || this.demo) return;
         this.guided.stop('Ring stream stopped.');
+        MidiMaps.params.forEach(param=>MidiMaps.stop(param));
         this.pulseUntil = 0;
         this.signals.reset();
         this.lastLive = -Infinity;

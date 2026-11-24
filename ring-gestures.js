@@ -176,7 +176,19 @@ const GestureLearning = {
                 this.status.textContent = played ? `Preview · ${gesture.name} · synth note ${gesture.synthNote}` :
                     Number.isInteger(gesture.synthNote) ? 'Enable synth audio to hear this mapping.' : `Preview · ${gesture.name}`;
             };
-            row.append(type,number,synthLabel,synthNote,preview);
+            const liveLabel = document.createElement('label');
+            const live = document.createElement('input');
+            live.type = 'checkbox';
+            live.checked = gesture.midiLive !== false;
+            live.setAttribute('aria-label',`Live MIDI for ${gesture.name}`);
+            live.onchange = () => { gesture.midiLive = live.checked; this.save(); };
+            liveLabel.append(live,' Live MIDI');
+            const send = document.createElement('button');
+            send.type = 'button';
+            send.textContent = 'Send once';
+            send.setAttribute('aria-label',`Send MIDI once for ${gesture.name}`);
+            send.onclick = () => MidiMaps.send(gesture.type,gesture.number,gesture.name);
+            row.append(type,number,liveLabel,send,synthLabel,synthNote,preview);
             if (gesture.examples) {
                 const remove = document.createElement('button');
                 remove.textContent = 'Delete';
@@ -519,6 +531,7 @@ const GestureLearning = {
     },
 
     sendRoute(gesture) {
+        if (gesture.midiLive === false || MidiMaps.frozen()) return;
         if (gesture.type === 'note') MIDI.sendNote(gesture.number);
         if (gesture.type === 'cc') {
             MIDI.sendCC(gesture.number,0);

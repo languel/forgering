@@ -24,6 +24,14 @@ Open [Ring Studio on localhost](http://localhost:8001/). The app serves static f
 
 Start with the ring as shipped. A firmware update is optional for the classroom exercise.
 
+## MIDI learn and saved maps
+
+In **Mapping**, choose the MIDI destination and channel. Enable **Freeze live MIDI output**, put your synth or DAW in MIDI learn, then click **Send once** beside the desired parameter or gesture. CC sends one value of 64, and notes send a note-on followed by a release. Each row also has its own **Live MIDI** switch.
+
+Name and **Save map** to store assignments, channel, destination, acceleration ranges, smoothing, live switches, and gesture routes in this browser. Choose a saved map and **Load map** to restore it. Saving an existing name replaces that preset. Training examples remain in the gesture catalog. An unavailable MIDI destination must be selected again.
+
+**Edit acceleration mapping** selects the row whose range and smoothing you are editing. X, Y, and Z retain independent settings.
+
 ## Gesture Lab
 
 Connect the ring and start streaming, then open **Gesture Lab**. **Demo** plays a labeled simulation with repeating squeezes and alternating signed flicks.

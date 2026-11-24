@@ -196,16 +196,25 @@ class RingLabView {
         const lastStart = Math.max(0,points.findLastIndex(point => point.start));
         ctx.lineCap = ctx.lineJoin = 'round';
         const drawPath = (begin,end,color) => {
-            if (begin >= end) return;
-            ctx.beginPath();
-            for (let i = begin; i < end; i++) {
-                const p = project(points[i].position);
-                if (i === begin || points[i].start) ctx.moveTo(...p);
-                else ctx.lineTo(...p);
-            }
+            if (end - begin < 2) return;
             ctx.strokeStyle = color;
-            ctx.lineWidth = 2.5;
-            ctx.stroke();
+            let previous = project(points[begin].position);
+            let width = 0;
+            ctx.beginPath();
+            for (let i = begin + 1; i < end; i++) {
+                const current = project(points[i].position);
+                const segmentWidth = (points[i - 1].width + points[i].width) / 2;
+                if (!points[i].start && segmentWidth !== width) {
+                    if (width) ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(...previous);
+                    ctx.lineWidth = width = segmentWidth;
+                }
+                if (points[i].start) ctx.moveTo(...current);
+                else ctx.lineTo(...current);
+                previous = current;
+            }
+            if (width) ctx.stroke();
         };
         drawPath(0,lastStart,'#548581');
         drawPath(lastStart,points.length,'#a5f5d5');

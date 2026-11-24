@@ -124,12 +124,18 @@ const RingLab = {
         window.addEventListener('pagehide', () => this.stopCamera());
         this.ui['open-ink'].addEventListener('click', () => document.querySelector('[data-pane="ink"]').click());
         this.ui['ink-calibrate'].addEventListener('click', () => this.ui.calibrate.click());
-        this.ui.clear.addEventListener('click', () => {
+        this.ui['draw-mode'].addEventListener('change', () => {
             const now = performance.now();
+            this.setDrawingGate(false,now);
+            if (!this.freeDraw()) this.setDrawingGate(this.signals.gate,now);
+        });
+        this.ui['draw-width'].addEventListener('change', () => {
+            this.ui['draw-width-range'].hidden = !RingLabSignals.channels.includes(this.ui['draw-width'].value);
+        });
+        this.ui.clear.addEventListener('click', () => {
             this.trajectory.clear();
             this.inertial.clear();
-            this.trajectory.setGate(this.signals.gate,now);
-            this.inertial.setGate(this.signals.gate,now,this.signals.motion?.gravity);
+            if (!this.freeDraw()) this.setDrawingGate(this.signals.gate,performance.now());
         });
         this.ui.calibrate.addEventListener('click', () => {
             this.signals.calibrate(performance.now());
@@ -282,13 +288,15 @@ const RingLab = {
             this.signals.motionSample(raw.x, raw.y, raw.z, now);
             const {impulse,poseGravity} = this.signals.motion;
             RingLabSignals.axes.forEach((axis,i) => this.addPoint(axis, impulse[i], now));
-            if (this.signals.gate) {
+            if (this.freeDraw()) this.setDrawingGate(true,now);
+            if (this.trajectory.active) {
+                const width = this.drawingWidth(now);
                 const transform = vector => this.trajectoryAxes(vector,poseGravity);
-                const point = this.trajectory.sample(transform(impulse),now,this.number('ink-gain',24));
-                if (point) this.capture({type:'trajectory', position:point.position, time:now});
+                const point = this.trajectory.sample(transform(impulse),now,this.number('ink-gain',24),width);
+                if (point) this.capture({type:'trajectory', position:point.position, time:now, width:point.width});
                 const integrated = this.inertial.integrate([raw.x,raw.y,raw.z],this.signals.motion.gravity,
-                    transform,now,this.ui['ink-gravity'].value === 'follow');
-                if (integrated) this.capture({type:'integrated-trajectory', metres:integrated.position, time:now});
+                    transform,now,this.ui['ink-gravity'].value === 'follow',width);
+                if (integrated) this.capture({type:'integrated-trajectory', metres:integrated.position, time:now, width:integrated.width});
             }
         }
         for (const channel of RingLabSignals.channels) {
@@ -296,6 +304,29 @@ const RingLab = {
             this.signals.opticalSample(channel, raw[channel], now);
             this.addPoint(channel, raw[channel], now);
         }
+    },
+
+    freeDraw() {
+        return this.ui['draw-mode'].value === 'free';
+    },
+
+    drawingWidth(now) {
+        const source = this.ui['draw-width'].value;
+        if (source === 'fixed') return 2.5;
+        if (source === 'squeeze') return this.signals.gate ? 8 : 1.5;
+        const sample = this.signals.optical[source];
+        const low = this.ui['draw-width-low'].valueAsNumber;
+        const high = this.ui['draw-width-high'].valueAsNumber;
+        if (!sample || now - sample.time > this.signals.thresholds.opticalWindow || !(high > low)) return 1.5;
+        const amount = Math.max(0,Math.min(1,(sample.value-low)/(high-low)));
+        return 1.5 + amount*6.5;
+    },
+
+    setDrawingGate(on,now) {
+        if (this.trajectory.active === on) return;
+        const width = this.drawingWidth(now);
+        this.trajectory.setGate(on,now,width);
+        this.inertial.setGate(on,now,width,this.signals.motion?.gravity);
     },
 
     addPoint(key, value, now) {
@@ -323,6 +354,7 @@ const RingLab = {
         this.guided.stop('Ring stream stopped.');
         MidiMaps.suspend();
         this.pulseUntil = 0;
+        this.setDrawingGate(false,performance.now());
         this.signals.reset();
         this.lastLive = -Infinity;
         this.ui['cal-status'].textContent = 'Rest your hand before calibrating.';
@@ -333,8 +365,7 @@ const RingLab = {
         const {type,time} = event;
         if (type === 'squeeze') {
             if (!this.demo) GestureLearning.squeeze(event.on,time);
-            this.trajectory.setGate(event.on,time);
-            this.inertial.setGate(event.on,time,this.signals.motion?.gravity);
+            if (!this.freeDraw()) this.setDrawingGate(event.on,time);
             this.ui.gate.toggleAttribute('data-on', event.on);
             this.ui.gate.textContent = event.on ? 'Gate on' : 'Gate off';
         }
@@ -448,6 +479,7 @@ const RingLab = {
     update(now) {
         if (this.demo) this.simulate(now);
         this.signals.tick(now);
+        if (this.freeDraw() && now - this.signals.motionTime > 500) this.setDrawingGate(false,now);
         if (!this.pane.hidden || !this.inkPane.hidden) GestureLearning.monitor.refreshStatus();
         this.refreshAudio(now);
         if (this.take && now - this.take.start >= 60000) this.record();
@@ -661,8 +693,9 @@ const RingLab = {
         const trajectory = integrated ? this.inertial : this.trajectory;
         this.ui['ink-gain-label'].hidden = integrated;
         this.ui['ink-gravity-label'].hidden = !integrated;
-        this.ui['ink-gate'].textContent = this.signals.gate ? 'Drawing' : 'Squeeze to draw';
-        this.ui['ink-gate'].toggleAttribute('data-on',this.signals.gate);
+        this.ui['ink-gate'].textContent = trajectory.active ? 'Drawing' :
+            this.freeDraw() ? 'Waiting for motion data' : 'Squeeze to draw';
+        this.ui['ink-gate'].toggleAttribute('data-on',trajectory.active);
         const optical = this.signals.opticalAvailable(now);
         const strength = channel => Math.max(0,Math.round(this.signals.strength(channel)*100));
         this.ui['ink-optical'].textContent = this.signals.calibration ? 'Measuring relaxed hand…' :

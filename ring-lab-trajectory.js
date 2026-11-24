@@ -14,18 +14,18 @@ class RingLabTrajectory {
         this.releasedAt = -Infinity;
     }
 
-    setGate(on, now) {
+    setGate(on, now, width) {
         if (this.active === on) return;
         this.active = on;
         this.velocity = [0,0,0];
         this.lastSample = now;
         if (on) {
             this.position = [0,0,0];
-            this.points.push({time:now, position:this.position, start:true});
+            this.points.push({time:now, position:this.position, width, start:true});
         } else this.releasedAt = now;
     }
 
-    sample(acceleration, now, gain) {
+    sample(acceleration, now, gain, width) {
         if (!this.active) return null;
         const dt = (now-this.lastSample)/1000;
         this.lastSample = now;
@@ -43,7 +43,7 @@ class RingLabTrajectory {
         const extent = Math.hypot(...next);
         this.position = extent > 1.25 ? next.map(p => p*1.25/extent) : next;
         if (extent > 1.25) this.velocity = this.velocity.map(v => v*.4);
-        const point = {time:now,position:this.position};
+        const point = {time:now,position:this.position,width};
         this.points.push(point);
         while (this.points.length > 650 || now-this.points[0].time > 15000) this.points.shift();
         return point;
@@ -56,16 +56,16 @@ class RingLabTrajectory {
 }
 
 class RingLabInertialStroke extends RingLabTrajectory {
-    setGate(on, now, gravity) {
+    setGate(on, now, width, gravity) {
         if (this.active === on) return;
-        super.setGate(on,now);
+        super.setGate(on,now,width);
         if (!on) return;
         this.gravity = gravity?.slice();
         this.gravityNorm = gravity ? Math.hypot(...gravity) : 0;
         this.previousAcceleration = null;
     }
 
-    integrate(sample, estimatedGravity, transform, now, followTilt) {
+    integrate(sample, estimatedGravity, transform, now, followTilt, width) {
         if (!this.active) return null;
         const dt = (now-this.lastSample)/1000;
         this.lastSample = now;
@@ -98,7 +98,7 @@ class RingLabInertialStroke extends RingLabTrajectory {
         this.position = this.position.map((p,i) => p+(this.velocity[i]+velocity[i])*.5*dt);
         this.velocity = velocity;
         this.previousAcceleration = acceleration;
-        const point = {time:now,position:this.position};
+        const point = {time:now,position:this.position,width};
         this.points.push(point);
         while (this.points.length > 650) this.points.shift();
         return point;

@@ -105,19 +105,6 @@
             margin-top: 10px
         }
 
-        .status-indicator {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #ccc;
-            margin-right: 5px
-        }
-
-        .status-indicator.connected {
-            background: #4CAF50
-        }
-
         .status-bar {
             display: flex;
             align-items: center;
@@ -238,17 +225,6 @@
             color: #666;
             margin-top: 10px;
             columns: 2
-        }
-
-        .status-indicator.connecting {
-            background: #FFA500;
-            animation: blink 1s infinite
-        }
-
-        @keyframes blink {
-            50% {
-                opacity: 0.5
-            }
         }
 
         .midi-controls {
@@ -447,9 +423,6 @@
         .cmd-list li, .stream-chip, .midi-mappings th, .midi-mappings td { border-color: var(--border); }
         .metric-card:hover, .metric-card:active, .metric-card.active { background: var(--soft); }
         .stream-chip span { color: var(--text); border-inline-start: 2px solid var(--stream-color); padding-inline-start: 4px; }
-        .status-indicator { background: var(--border); }
-        .status-indicator.connected { background: #789583; }
-        .status-indicator.connecting { background: #a99a73; }
 
         .collapsible > summary {
             display: flex;
@@ -476,7 +449,7 @@
         .studio-tabs button[aria-pressed="true"] { color: var(--text); background: transparent; box-shadow: inset 0 -2px var(--accent); }
         .studio-row { margin: .35rem 0; gap: .45rem; }
         .studio-row h2 { margin: 0 auto 0 0; }
-        .toolbar button:is(#connectButton, #rebootButton) { width: auto; padding-inline: .75rem; font-size: inherit; }
+        .toolbar button#rebootButton { width: auto; padding-inline: .75rem; font-size: inherit; }
         .brand { font-weight: 700; letter-spacing: -.04em; white-space: nowrap; }
         #system-log { position: sticky; bottom: 0; z-index: 3; margin: 0; border-top: 1px solid var(--border); background: var(--page); max-height: 48vh; overflow: auto; }
         #system-log .log-container { margin-top: .35rem; }
@@ -531,17 +504,16 @@
             .studio-row input[type=file] { max-width: 100%; }
         }
     </style>
-    <style>.toolbar .status-indicator.ring-glyph { display: inline-block; width: auto; height: auto; border-radius: 0; background: none; font-size: 32px; line-height: 1; font-weight: 400; color: var(--muted); }
-    .toolbar .status-indicator.ring-glyph.connected { color: #73bc91; background: none; }
-    .toolbar .status-indicator.ring-glyph.connecting { color: #d9b971; background: none; }</style>
-    <link rel="stylesheet" href="ring-lab.css?v=57460086c38a">
+    <link rel="stylesheet" href="ring-lab.css?v=5a5ff70b899e">
 </head>
 
 <body>
     <header class="toolbar" aria-label="Ring controls">
-        <div class="status-bar"><span class="status-indicator ring-glyph" id="status-indicator" aria-hidden="true" title="ForgeRing">◎</span><span id="connection-status">Disconnected</span></div>
+        <div class="status-bar">
+            <button class="icon-button ring-glyph" id="connectButton" type="button" title="Connect ring" aria-label="Connect ring">◎</button>
+            <span id="connection-status" role="status">Disconnected</span>
+        </div>
         <div class="toolbar-actions">
-            <button class="icon-button" id="connectButton" title="Connect ring" aria-label="Connect ring">Connect</button>
             <button class="icon-button" id="rebootButton" type="button" title="Restart the connected ring" disabled>Reboot</button>
             <button class="icon-button" id="theme-toggle" type="button" title="Dark mode" aria-label="Dark mode" aria-pressed="false">☾</button>
             <details class="toolbar-menu"><summary title="Help" aria-label="Help">?</summary>
@@ -762,6 +734,15 @@
             </div>
             <div class="midi-mappings">
                 <table>
+                    <colgroup>
+                        <col>
+                        <col class="midi-data-column">
+                        <col class="midi-value-column">
+                        <col class="midi-event-column">
+                        <col class="midi-number-column">
+                        <col class="midi-live-column">
+                        <col class="midi-learn-column">
+                    </colgroup>
                     <thead><tr><th>Parameter</th><th>Data</th><th>MIDI value</th><th>Event</th><th>CC / Note #</th></tr></thead>
                     <tbody></tbody>
                 </table>
@@ -943,6 +924,19 @@
                 <button id="lab-drawing-camera" type="button" aria-pressed="false">Start webcam</button>
             </div>
         </div>
+        <div class="lab-controls lab-drawing-brush">
+            <label>Draw mode<select id="lab-draw-mode">
+                <option value="squeeze">Squeeze to draw</option><option value="free">Free draw</option>
+            </select></label>
+            <label>Line thickness<select id="lab-draw-width">
+                <option value="fixed">Fixed</option><option value="squeeze">Squeeze</option>
+                <option value="blood">Blood raw</option><option value="hrs">HRS raw</option>
+            </select></label>
+            <div id="lab-draw-width-range" hidden>
+                <label>Thin at<input id="lab-draw-width-low" type="number" step="any" value="0"></label>
+                <label>Thick at<input id="lab-draw-width-high" type="number" step="any" value="4000"></label>
+            </div>
+        </div>
         <div id="lab-ink-views" class="lab-ink-views">
             <section class="lab-panel lab-ink-panel lab-ink-orbit" aria-label="Drawing viewport">
                 <h3><span id="lab-drawing-view-name">Free 3D</span> <small>Drag to orbit · Shift-drag to pan</small></h3>
@@ -1077,17 +1071,17 @@
         </details>
     </details>
 
-    <script src="midi-maps.js?v=765a4b627fa8"></script>
+    <script src="midi-maps.js?v=b332a9f95c13"></script>
     <script src="ring-gesture-monitor.js?v=1a91ad4b3ab7"></script>
     <script src="ring-gestures.js?v=6452ae92159e"></script>
     <script src="ring-firmware.js?v=3df40bd28133"></script>
     <script src="ring-lab-signals.js?v=fa3bcd68887f"></script>
-    <script src="ring-lab-trajectory.js?v=0466f3768786"></script>
+    <script src="ring-lab-trajectory.js?v=554fc1fc561e"></script>
     <script src="ring-lab-synth.js?v=996871c07385"></script>
     <script src="ring-lab-pose.js?v=87c8cde29b07"></script>
     <script src="ring-lab-calibration.js?v=238d0340994e"></script>
-    <script src="ring-lab-view.js?v=6de96e9c3850"></script>
-    <script src="ring-lab.js?v=f78b5f2d400f"></script>
+    <script src="ring-lab-view.js?v=7cc0934a9bac"></script>
+    <script src="ring-lab.js?v=530586513f98"></script>
     <script>
         // Global state variables
         const RingController = {
@@ -1150,7 +1144,6 @@
             init() {
                 this.connectButton = document.getElementById('connectButton');
                 this.toggleDataButton = document.getElementById('toggleDataButton');
-                this.statusIndicator = document.getElementById('status-indicator');
                 this.connectionStatus = document.getElementById('connection-status');
                 this.log = document.getElementById('log');
                 this.clearLogButton = document.getElementById('clearLogButton');
@@ -1968,26 +1961,19 @@
             updateConnectionStatus(status) {
                 if (status === false) MidiMaps.params.forEach(param => MidiMaps.stop(param));
                 if (status === false) RingLab.stopLive();
-                DOM.connectButton.textContent = status === true ? 'Disconnect' : status === 'connecting' ? 'Connecting…' : 'Connect';
+                DOM.connectButton.classList.toggle('connected', status === true);
+                DOM.connectButton.classList.toggle('connecting', status === 'connecting');
+                DOM.connectButton.title = DOM.connectButton.ariaLabel =
+                    status === true ? 'Disconnect ring' : status === 'connecting' ? 'Connecting ring' : 'Connect ring';
                 DOM.connectButton.disabled = status === 'connecting';
                 document.getElementById('rebootButton').disabled = status !== true;
                 DOM.toggleDataButton.disabled = status !== true;
                 if (status === false) document.getElementById('device-info').textContent = 'Disconnected';
                 FirmwareLoader.render();
                 if (status === true) {
-                    DOM.statusIndicator.classList.remove('connecting');
-                    DOM.statusIndicator.classList.add('connected');
                     DOM.connectionStatus.textContent = RingController.device?.name || 'Connected';
-                    DOM.connectButton.title = DOM.connectButton.ariaLabel = 'Disconnect ring';
-                } else if (status === 'connecting') {
-                    DOM.statusIndicator.classList.remove('connected');
-                    DOM.statusIndicator.classList.add('connecting');
-                    DOM.connectionStatus.textContent = 'Connecting...';
-                    DOM.connectButton.title = DOM.connectButton.ariaLabel = 'Connect ring';
                 } else {
-                    DOM.statusIndicator.classList.remove('connected', 'connecting');
-                    DOM.connectionStatus.textContent = 'Disconnected';
-                    DOM.connectButton.title = DOM.connectButton.ariaLabel = 'Connect ring';
+                    DOM.connectionStatus.textContent = status === 'connecting' ? 'Connecting…' : 'Disconnected';
                 }
             },
 
@@ -2455,6 +2441,7 @@
                 try {
                     RingController.midiOutput.send(message);
                     RingController.lastMIDIValues[key] = value;
+                    return true;
                 } catch (error) {
                     UI.addLog(`MIDI send error: ${error.message}`);
                 }
@@ -2474,6 +2461,7 @@
                 try {
                     output.send(noteOn);
                     output.send(noteOff, performance.now() + duration);
+                    return true;
                 } catch (error) {
                     UI.addLog(`MIDI note error: ${error.message}`);
                 }
@@ -2920,6 +2908,7 @@
                     document.getElementById('pane-' + item.dataset.pane).hidden = item !== tab;
                 }
                 if (tab.dataset.pane === 'stream') { Signals.draw(); Records.schedule(); }
+                if (tab.dataset.pane === 'mapping') MidiMaps.params.forEach(param => MidiMaps.drawSpark(param));
                 if (tab.dataset.pane !== 'lab') RingLab.stopCamera();
                 if (tab.dataset.pane !== 'ink') RingLab.stopDrawingCamera();
             });

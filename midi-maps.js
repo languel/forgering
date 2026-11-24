@@ -21,6 +21,8 @@ const MidiMaps = {
         this.picker = document.getElementById('midi-map-select');
         this.name = document.getElementById('midi-map-name');
         const table = document.querySelector('.midi-mappings table');
+        this.pane = table.closest('#pane-mapping');
+        this.rows = {};
         const header = document.createElement('th');
         const toggle = document.createElement('button');
         toggle.type = 'button';
@@ -43,8 +45,12 @@ const MidiMaps = {
         for (const [index,param] of this.params.entries()) {
             this.configs[param] = this.defaults(param);
             const row = table.tBodies[0].insertRow();
-            row.innerHTML = `<td><button type="button" class="midi-edit" aria-expanded="false">${this.labels[param]}</button></td>
-                <td id="midi-${param}-data">—</td><td id="midi-${param}-value">0</td>
+            row.className = 'midi-parameter';
+            row.innerHTML = `<td><div class="midi-parameter-label">
+                    <button type="button" class="midi-edit" aria-expanded="false" aria-controls="midi-${param}-editor">${this.labels[param]}</button>
+                    <canvas class="midi-mini-spark" width="128" height="44" aria-hidden="true"></canvas>
+                </div></td>
+                <td class="midi-readout" id="midi-${param}-data">—</td><td class="midi-readout" id="midi-${param}-value">0</td>
                 <td><select id="midi-${param}-type" aria-label="Event for ${this.labels[param]}">
                 <option value="cc">CC</option><option value="threshold">Threshold note</option><option value="pulse">Timed note</option></select></td>
                 <td><input id="midi-${param}-cc" type="number" min="0" max="127" value="${20+index}" aria-label="CC or note number for ${this.labels[param]}"></td>
@@ -56,6 +62,7 @@ const MidiMaps = {
             document.getElementById(`midi-${param}-cc`).value=legacyNumbers[param];
             const detail = table.tBodies[0].insertRow();
             detail.hidden = true;
+            detail.id = `midi-${param}-editor`;
             detail.className = 'midi-row-editor';
             const cell = detail.insertCell();
             cell.colSpan = 7;
@@ -103,23 +110,30 @@ const MidiMaps = {
             const canvas=document.createElement('canvas');
             canvas.width=840;canvas.height=190;canvas.className='midi-spark';
             canvas.setAttribute('aria-label',`Signal and draggable range and threshold lines for ${this.labels[param]}`);
-            sparkToggle.onchange=()=>{this.configs[param].spark=sparkToggle.checked;canvas.hidden=!sparkToggle.checked;};
-            const hint=document.createElement('p');hint.className='hint';hint.textContent='Raw: dashed gray · Filtered: mint. Drag range and threshold lines. Slide times reach 90% of a change.';
+            sparkToggle.onchange=()=>{
+                this.configs[param].spark=sparkToggle.checked;
+                this.drawSpark(param);
+            };
+            const hint=document.createElement('p');hint.className='hint';hint.textContent='Raw (dashed) · Filtered (solid). Drag range and threshold lines. Slide times reach 90% of a change.';
             cell.append(controls,sparkLabel,hint,canvas);
             row.querySelector('.midi-edit').onclick = event => {
                 for (const item of table.querySelectorAll('.midi-row-editor')) if (item!==detail) item.hidden=true;
                 for (const button of table.querySelectorAll('.midi-edit')) button.setAttribute('aria-expanded','false');
                 detail.hidden=!detail.hidden;
                 event.currentTarget.setAttribute('aria-expanded',String(!detail.hidden));
-                this.drawSpark(param);
+                this.params.forEach(key=>this.drawSpark(key));
             };
             document.getElementById(`midi-${param}-live`).onchange=()=>this.stop(param);
             for(const suffix of ['type','cc'])document.getElementById(`midi-${param}-${suffix}`).addEventListener('change',()=>this.stop(param));
             row.cells[6].querySelector('button').onclick=()=>{
                 this.stop(param);
                 const type=document.getElementById(`midi-${param}-type`).value;
-                this.send(type==='cc'?'cc':'note',Number(document.getElementById(`midi-${param}-cc`).value),this.labels[param],this.configs[param].duration);
+                const duration = this.configs[param].duration;
+                if (this.send(type==='cc'?'cc':'note',Number(document.getElementById(`midi-${param}-cc`).value),this.labels[param],duration)) {
+                    this.flash(param,type==='cc'?160:Math.max(160,duration));
+                }
             };
+            this.rows[param]={row,detail,canvas,mini:row.querySelector('canvas')};
             this.history[param]=[];
             this.configs[param]._cell=cell;
             this.installDrag(param,canvas);
@@ -161,11 +175,9 @@ const MidiMaps = {
     frozen() { return document.getElementById('midi-freeze')?.checked ?? false; },
     live(param) { return !this.frozen() && document.getElementById(`midi-${param}-live`)?.checked !== false; },
     stop(param) {
-        const held=this.heldNotes[param];
-        if(held) {
-            try { held.output.send([0x80+held.channel,held.note,0]); } catch(error) { UI.addLog(`Note release failed: ${error.message}`); }
-            delete this.heldNotes[param];
-        }
+        this.release(param);
+        clearTimeout(this.rows?.[param]?.flashTimer);
+        this.rows?.[param]?.row.removeAttribute('data-midi-flash');
         clearTimeout(this.configs[param]?._timer);
         if(this.configs[param]) this.configs[param]._trigger=false;
         clearInterval(RingController.midiInterpolationTimers[param]);
@@ -236,7 +248,7 @@ const MidiMaps = {
             const target=Math.round(config.outMin+ratio*(config.outMax-config.outMin));
             document.getElementById(`midi-${param}-value`).textContent=target;
             if(type==='cc') {
-                MIDI.sendCC(number,target);
+                if (MIDI.sendCC(number,target)) this.flash(param);
             } else {
                 if(filtered<config.off) {
                     if(type==='threshold')this.release(param);
@@ -250,6 +262,7 @@ const MidiMaps = {
                     try {
                         output.send([0x90+channel,number,100]);
                         this.heldNotes[param]={output,channel,note:number};
+                        this.rows[param].row.setAttribute('data-midi-note','');
                         if(type==='pulse') config._timer=setTimeout(()=>this.release(param),config.duration);
                     } catch(error){UI.addLog(`MIDI note failed: ${error.message}`);}
                 }
@@ -261,37 +274,62 @@ const MidiMaps = {
         if(!held)return;
         try{held.output.send([0x80+held.channel,held.note,0]);}catch(error){UI.addLog(`Note release failed: ${error.message}`);}
         delete this.heldNotes[param];
+        this.rows[param].row.removeAttribute('data-midi-note');
         clearTimeout(this.configs[param]?._timer);
     },
 
+    flash(param,duration=160) {
+        const activity=this.rows[param];
+        activity.row.setAttribute('data-midi-flash','');
+        clearTimeout(activity.flashTimer);
+        activity.flashTimer=setTimeout(()=>activity.row.removeAttribute('data-midi-flash'),duration);
+    },
+
     drawSpark(param) {
-        const row=this.configs[param], canvas=row._cell.querySelector('canvas');
-        if(canvas.hidden || canvas.closest('tr').hidden)return;
-        const points=this.history[param],ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
-        const low=Math.min(row.min,row.off,...points.flatMap(point=>point.slice(1)));
-        const high=Math.max(row.max,row.on,...points.flatMap(point=>point.slice(1)));
-        const pad=(high-low)*.12;
+        const config=this.configs[param], {detail,canvas,mini}=this.rows[param];
+        canvas.hidden=!config.spark;
+        mini.hidden=!config.spark || !detail.hidden;
+        if (!config.spark || this.pane.hidden) return;
+        const compact=detail.hidden;
+        const plot=compact?mini:canvas;
+        const w=plot.width,h=plot.height,ctx=plot.getContext('2d');
+        const now=performance.now(),points=this.history[param].filter(point=>point[0]>=now-5000);
+        ctx.clearRect(0,0,w,h);
+        if (compact && !points.length) return;
+        const values=points.flatMap(point=>point.slice(1));
+        if (!compact) values.push(config.min,config.off,config.max,config.on);
+        const low=Math.min(...values),high=Math.max(...values);
+        const pad=(high-low)*.12 || Math.max(Math.abs(low)*.05,.01);
         const min=low-pad,max=high+pad;
-        row._plot={min,max};
-        const y=value=>h-12-(value-min)/(max-min)*(h-24);
-        ctx.fillStyle='#0a1321';ctx.fillRect(0,0,w,h);
-        const now=performance.now();
-        for(const [column,color,dash] of [[1,'#8c9aad',[5,4]],[2,'#a5f5d5',[]]]) {
-            ctx.strokeStyle=color;ctx.lineWidth=2;ctx.setLineDash(dash);ctx.beginPath();
+        const inset=compact?4:12;
+        const y=value=>h-inset-(value-min)/(max-min)*(h-2*inset);
+        const style=getComputedStyle(plot);
+        for (const [column,token,dash] of [[1,'--midi-trace-raw',[5,4]],[2,'--midi-trace-filtered',[]]]) {
+            ctx.strokeStyle=style.getPropertyValue(token);
+            ctx.lineWidth=2;
+            ctx.setLineDash(dash);
+            ctx.beginPath();
             points.forEach((point,i)=>{
-                const x=(point[0]-now+5000)/5000*(w-130),value=point[column];
-                if(i)ctx.lineTo(x,y(value));else ctx.moveTo(x,y(value));
+                const x=(point[0]-now+5000)/5000*(compact?w-2:w-130);
+                if(i)ctx.lineTo(x,y(point[column]));
+                else {
+                    ctx.moveTo(x,y(point[column]));
+                    if(points.length===1) ctx.lineTo(x+2,y(point[column]));
+                }
             });
             ctx.stroke();
         }
         ctx.setLineDash([]);
+        if (compact) return;
+        config._plot={min,max};
         ctx.font='13px monospace';
         const type=document.getElementById(`midi-${param}-type`).value;
-        const lines=type==='cc'?[['min','#8295ab'],['max','#8295ab']]:
-            [['min','#8295ab'],['max','#8295ab'],['on','#f7bc7c'],['off','#c5a8ff']];
-        for(const [key,color] of lines){
-            ctx.strokeStyle=ctx.fillStyle=color;ctx.setLineDash([6,4]);ctx.beginPath();ctx.moveTo(0,y(row[key]));ctx.lineTo(w,y(row[key]));ctx.stroke();ctx.setLineDash([]);
-            ctx.fillText(`${key} ${Number(row[key].toFixed(2))}`,w-120,y(row[key])-3);
+        const lines=[['min','--muted'],['max','--muted']];
+        if(type!=='cc') lines.push(['on','--midi-trigger-on'],['off','--midi-trigger-off']);
+        for(const [key,token] of lines){
+            ctx.strokeStyle=ctx.fillStyle=style.getPropertyValue(token);
+            ctx.setLineDash([6,4]);ctx.beginPath();ctx.moveTo(0,y(config[key]));ctx.lineTo(w,y(config[key]));ctx.stroke();ctx.setLineDash([]);
+            ctx.fillText(`${key} ${Number(config[key].toFixed(2))}`,w-120,y(config[key])-3);
         }
     },
 
@@ -325,9 +363,11 @@ const MidiMaps = {
             this.status.textContent = 'Choose a CC or note and a number from 0 to 127.';
             return;
         }
-        if (type === 'cc') MIDI.sendCC(number,64,true);
-        else MIDI.sendNote(number,100,true,duration);
-        this.status.textContent = `Sent ${label} · ${type.toUpperCase()} ${number} · channel ${Number(RingController.midiChannel)+1}`;
+        const sent = type === 'cc' ? MIDI.sendCC(number,64,true) : MIDI.sendNote(number,100,true,duration);
+        this.status.textContent = sent
+            ? `Sent ${label} · ${type.toUpperCase()} ${number} · channel ${Number(RingController.midiChannel)+1}`
+            : `Could not send ${label}.`;
+        return sent;
     },
 
     read() {
@@ -432,8 +472,6 @@ const MidiMaps = {
                     input.value=this.configs[param][input.dataset.setting];
                     if(input.type==='range')input.parentElement.querySelector('output').textContent=input.value+' ms';
                 });
-                const canvas=cell.querySelector('canvas');
-                canvas.hidden=!config.spark;
                 cell.querySelector('input[type="checkbox"]').checked=config.spark;
                 document.getElementById(`midi-${param}-type`).value = row.type === 'note' ? 'pulse' : row.type;
                 document.getElementById(`midi-${param}-cc`).value = row.number;

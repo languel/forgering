@@ -131,19 +131,22 @@ class RingGestureMonitor {
 
     draw(canvas,example,peak) {
         const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#0a1321';
-        ctx.fillRect(0,0,canvas.width,canvas.height);
+        const style = getComputedStyle(document.documentElement);
+        const positive = style.getPropertyValue('--trace-x'), negative = style.getPropertyValue('--trace-z');
+        const label = style.getPropertyValue('--plot-label');
+        ctx.clearRect(0,0,canvas.width,canvas.height);
         ctx.font = '11px monospace';
         const spacing = (canvas.width-21)/example.length;
         for (let axis = 0; axis < 3; axis++) {
-            ctx.fillStyle = '#a5b6ca';
+            ctx.fillStyle = label;
             ctx.fillText('XYZ'[axis],4,axis*22+16);
             example.forEach((point,i) => {
                 const value = point[axis]/peak;
-                ctx.fillStyle = value >= 0 ? `rgba(150,248,209,${.10+.9*value})` :
-                    `rgba(195,167,255,${.10-.9*value})`;
+                ctx.fillStyle = value >= 0 ? positive : negative;
+                ctx.globalAlpha = .10+.9*Math.abs(value);
                 ctx.fillRect(18+i*spacing,axis*22+4,spacing-1.5,17);
             });
+            ctx.globalAlpha = 1;
         }
     }
 }

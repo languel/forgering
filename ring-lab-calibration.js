@@ -223,7 +223,7 @@ class RingLabCalibration {
                 ctx.moveTo(landmarks[start].x*w,landmarks[start].y*h);
                 ctx.lineTo(landmarks[end].x*w,landmarks[end].y*h);
             }
-            ctx.strokeStyle = 'rgba(8,15,29,.78)';
+            ctx.strokeStyle = 'rgba(24,24,24,.78)';
             ctx.lineWidth = weight+4;
             ctx.setLineDash(dash);
             ctx.stroke();

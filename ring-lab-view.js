@@ -39,13 +39,16 @@ class RingLabView {
         }
         const ctx = canvas.getContext('2d');
         ctx.setTransform(scale, 0, 0, scale, 0, 0);
-        return {ctx, width, height};
+        return {ctx, width, height, style:getComputedStyle(canvas)};
     }
 
     drawRing({horizontal, vertical, restPitch, restTurn, restRoll, frame, palmSide, markerClock, hand, gate, optical, now}) {
         const surface = this.prepare(this.ring);
         if (!surface) return;
-        const {ctx, width, height} = surface;
+        const {ctx, width, height, style} = surface;
+        const border = style.getPropertyValue('--border');
+        const accent = style.getPropertyValue('--accent');
+        const handFill = style.getPropertyValue('--soft');
         const f = hand ? Math.min(width*.16,height*.21) : Math.min(width*.30,height*.34);
         const distance = hand ? 7 : 3.4;
         let centerX = width / 2;
@@ -60,16 +63,12 @@ class RingLabView {
             points.forEach(([x,y], i) => i ? ctx.lineTo(x,y) : ctx.moveTo(x,y));
             ctx.stroke();
         };
-        const gradient = ctx.createRadialGradient(width * .52, height * .42, 0, width * .5, height * .5, Math.max(width,height) * .65);
-        gradient.addColorStop(0, '#14273c');
-        gradient.addColorStop(1, '#080f1d');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0,0,width,height);
+        ctx.clearRect(0,0,width,height);
         for (let i = -13; i <= 13; i++) {
-            line([project([i*.36,-.93,1.8]),project([i*.36,-.93,-12])], '#25364b');
+            line([project([i*.36,-.93,1.8]),project([i*.36,-.93,-12])], border);
         }
         for (let z = -12; z < 1.85; z += .48) {
-            line([project([-10,-.93,z]),project([10,-.93,z])], '#25364b');
+            line([project([-10,-.93,z]),project([10,-.93,z])], border);
         }
 
         const rx = restPitch, ry = restTurn, rz = restRoll;
@@ -99,7 +98,7 @@ class RingLabView {
                 .map(point => handProject(point)[0]);
             const left = Math.min(...bounds)-f*.55, right = Math.max(...bounds)+f*.55;
             centerX += Math.max(0,10-left)-Math.max(0,right-width+10);
-            this.drawHand(ctx,handProject,f);
+            this.drawHand(ctx,handProject,f,border,handFill);
         }
         const faces = this.mesh.map(({points, shade}) => {
             const vertices = points.map(rotate);
@@ -116,13 +115,13 @@ class RingLabView {
             ctx.beginPath();
             vertices.forEach((p,i) => i ? ctx.lineTo(...project(p)) : ctx.moveTo(...project(p)));
             ctx.closePath();
-            ctx.fillStyle = ctx.strokeStyle = `rgb(${tone*.92},${tone},${tone*1.09})`;
+            ctx.fillStyle = ctx.strokeStyle = `rgb(${tone},${tone},${tone})`;
             ctx.lineWidth = .7;
             ctx.fill();
             ctx.stroke();
         }
         if (hand && rotate([0,0,1])[2] > 0) {
-            this.drawDigit(ctx, p => project(rotate(p)), [[0,0,.31],[0,0,1.51],[.04,.04,2.24]], f*1.05, .47);
+            this.drawDigit(ctx, p => project(rotate(p)), [[0,0,.31],[0,0,1.51],[.04,.04,2.24]], f*1.05,.47,border,handFill);
         }
         const markerColors = ['#ff685d', '#fff1bb', '#66f4a7'];
         for (let i = 0; i < markerColors.length; i++) {
@@ -143,8 +142,8 @@ class RingLabView {
             const base = [30,height-49];
             ctx.font = '11px monospace';
             for (const [label,pos] of [['X',[64,height-49]],['Y',[51,height-71]],['Z',[30,height-82]]]) {
-                line([base,pos],'#a5f5d5',1.2);
-                ctx.fillStyle = '#a5f5d5';
+                line([base,pos],accent,1.2);
+                ctx.fillStyle = accent;
                 ctx.fillText(label,pos[0]+4,pos[1]-3);
             }
         }
@@ -153,7 +152,9 @@ class RingLabView {
     drawInk(canvas, trajectory, extent, now, view, orbit, camera) {
         const surface = this.prepare(canvas);
         if (!surface) return;
-        const {ctx,width,height} = surface;
+        const {ctx,width,height,style} = surface;
+        const accent = style.getPropertyValue('--accent');
+        const muted = style.getPropertyValue('--muted');
         const scale = Math.min(width,height)*.37/extent*camera.zoom;
         const originX = width*(.5+camera.x), originY = height*(.53+camera.y);
         const {yaw,pitch} = orbit;
@@ -173,8 +174,7 @@ class RingLabView {
             const [x,y] = flatten(point);
             return [originX+x*scale,originY-y*scale];
         };
-        ctx.fillStyle = '#0a1321';
-        ctx.fillRect(0,0,width,height);
+        ctx.clearRect(0,0,width,height);
         ctx.beginPath();
         if (view === '3d') {
             for (let i = -4; i <= 4; i++) {
@@ -188,7 +188,7 @@ class RingLabView {
             for (let x = offset(originX); x < width; x += spacing) {ctx.moveTo(x,0);ctx.lineTo(x,height);}
             for (let y = offset(originY); y < height; y += spacing) {ctx.moveTo(0,y);ctx.lineTo(width,y);}
         }
-        ctx.strokeStyle = '#25364b';
+        ctx.strokeStyle = style.getPropertyValue('--border');
         ctx.lineWidth = 1;
         ctx.stroke();
 
@@ -216,29 +216,28 @@ class RingLabView {
             }
             if (width) ctx.stroke();
         };
-        drawPath(0,lastStart,'#548581');
-        drawPath(lastStart,points.length,'#a5f5d5');
+        drawPath(0,lastStart,muted);
+        drawPath(lastStart,points.length,accent);
 
         const [x,y] = project(trajectory.cursor(now));
-        ctx.strokeStyle = trajectory.active ? '#a5f5d5' : '#839ab0';
+        ctx.strokeStyle = trajectory.active ? accent : muted;
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.arc(x,y,trajectory.active ? 8 : 4,0,Math.PI*2);
         ctx.stroke();
         if (trajectory.active) {
-            ctx.fillStyle = '#a5f5d5';
+            ctx.fillStyle = accent;
             ctx.beginPath();
             ctx.arc(x,y,3,0,Math.PI*2);
             ctx.fill();
         }
-        if (view === '3d') this.drawInkAxes(ctx,flatten,height);
+        if (view === '3d') this.drawInkAxes(ctx,flatten,height,style);
     }
 
-    drawInkAxes(ctx,flatten,height) {
+    drawInkAxes(ctx,flatten,height,style) {
         ctx.font = '10px monospace';
-        for (const [label,vector,color] of [
-            ['X',[1,0,0],'#ff968d'],['Y',[0,1,0],'#a5f5d5'],['Z',[0,0,1],'#c5a8ff']
-        ]) {
+        for (const [label,vector] of [['X',[1,0,0]],['Y',[0,1,0]],['Z',[0,0,1]]]) {
+            const color = style.getPropertyValue('--trace-' + label.toLowerCase());
             const [dx,dy] = flatten(vector);
             const x = 35+dx*19, y = height-31-dy*19;
             ctx.beginPath();
@@ -251,22 +250,22 @@ class RingLabView {
         }
     }
 
-    drawDigit(ctx, project, points, width, opacity) {
+    drawDigit(ctx, project, points, width, opacity, outline, fill) {
         ctx.save();
         ctx.lineJoin = ctx.lineCap = 'round';
         ctx.globalAlpha = opacity;
         ctx.beginPath();
         points.forEach((point,i) => i ? ctx.lineTo(...project(point)) : ctx.moveTo(...project(point)));
         ctx.lineWidth = width;
-        ctx.strokeStyle = '#579a94';
+        ctx.strokeStyle = outline;
         ctx.stroke();
         ctx.lineWidth = Math.max(1,width-2);
-        ctx.strokeStyle = '#254b56';
+        ctx.strokeStyle = fill;
         ctx.stroke();
         ctx.restore();
     }
 
-    drawHand(ctx, project, scale) {
+    drawHand(ctx, project, scale, outline, fill) {
         const palm = [[-3.35,0,-3.08],[-3.77,0,-2.31],[-3.56,0,-1.47],[-3.1,0,-.86],
             [-2.04,0,-.9],[-.85,0,-.84],[.54,0,-.97],[.76,0,-1.52],[.40,0,-2.12],[-.35,0,-3.00]];
         const digits = [
@@ -282,26 +281,25 @@ class RingLabView {
         ctx.beginPath();
         palm.forEach((point,i) => i ? ctx.lineTo(...project(point)) : ctx.moveTo(...project(point)));
         ctx.closePath();
-        ctx.fillStyle = '#183b48';
+        ctx.fillStyle = fill;
         ctx.fill();
-        ctx.strokeStyle = '#559990';
+        ctx.strokeStyle = outline;
         ctx.lineWidth = 1.4;
         ctx.stroke();
         ctx.restore();
-        for (const digit of digits) this.drawDigit(ctx,project,digit.points,scale*digit.width,.67);
+        for (const digit of digits) this.drawDigit(ctx,project,digit.points,scale*digit.width,.67,outline,fill);
     }
 
     drawTrace(canvas, traces, now, optical = false) {
         const surface = this.prepare(canvas);
         if (!surface) return;
-        const {ctx,width,height} = surface;
+        const {ctx,width,height,style} = surface;
         const left = 3, right = width-3, top = 3, bottom = height-17;
         const oldest = now - 5000;
         const x = time => left + (time-oldest)/5000*(right-left);
-        ctx.fillStyle = '#0a1321';
-        ctx.fillRect(0,0,width,height);
-        ctx.strokeStyle = '#29384a';
-        ctx.fillStyle = '#a5b6ca';
+        ctx.clearRect(0,0,width,height);
+        ctx.strokeStyle = style.getPropertyValue('--border');
+        ctx.fillStyle = style.getPropertyValue('--muted');
         ctx.font = '10px monospace';
         for (let i = 0; i <= 5; i++) {
             const xx = x(oldest+i*1000);
@@ -329,7 +327,8 @@ class RingLabView {
         for (const {visible,color,baseline,threshold,center} of visibleTraces) {
             if (!visible.length) continue;
             const y = v => (top+bottom)/2 - (v-center)/spread*(bottom-top)*.46;
-            ctx.strokeStyle = color;
+            const traceColor = style.getPropertyValue(color);
+            ctx.strokeStyle = traceColor;
             ctx.globalAlpha = .55;
             if (optical && baseline !== undefined) {
                 ctx.setLineDash([4,4]);
@@ -348,7 +347,7 @@ class RingLabView {
             });
             ctx.stroke();
             const [time,value] = visible.at(-1);
-            ctx.fillStyle = color;
+            ctx.fillStyle = traceColor;
             ctx.fillRect(x(time)-1,y(value)-1,3,3);
         }
     }

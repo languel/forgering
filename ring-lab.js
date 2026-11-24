@@ -1,9 +1,6 @@
 "use strict";
 
 const RingLab = {
-    axisColors: ['#8be8d4', '#f3be83', '#b6a8ff'],
-    opticalColors: {blood: '#ff968d', hrs: '#c5a8ff'},
-
     init() {
         this.pane = document.getElementById('pane-lab');
         this.inkPane = document.getElementById('pane-ink');
@@ -526,11 +523,11 @@ const RingLab = {
             markerClock:orientation ? radians(this.number('clock',0)) : 0,
             hand:this.ui.hand.checked,gate:this.signals.gate,optical,now});
         const opticalTraces = RingLabSignals.channels.map(channel => ({
-            points:this.history[channel], color:this.opticalColors[channel],
+            points:this.history[channel], color:'--trace-' + channel,
             baseline:this.signals.baseline?.[channel], threshold:this.signals.thresholds[channel]
         }));
-        const impulseTraces = RingLabSignals.axes.map((axis,i) => ({
-            points:this.history[axis], color:this.axisColors[i], threshold:this.signals.thresholds.flick
+        const impulseTraces = RingLabSignals.axes.map(axis => ({
+            points:this.history[axis], color:'--trace-' + axis, threshold:this.signals.thresholds.flick
         }));
         this.view.drawTrace(this.ui.optical,opticalTraces,now,true);
         this.view.drawTrace(this.ui.impulse,impulseTraces,now);

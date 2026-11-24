@@ -357,31 +357,30 @@
 
         :root {
             color-scheme: light;
-            --page: #eef0f1;
-            --surface: #fafbfc;
-            --inset: #f1f3f5;
-            --text: #273039;
-            --muted: #54606b;
-            --border: #cdd3d9;
-            --accent: #596b7c;
-            --accent-hover: #465767;
+            --page: #efefee;
+            --surface: #fafaf9;
+            --inset: #f5f5f3;
+            --text: #292a28;
+            --muted: #595c58;
+            --border: #cecfcc;
+            --accent: #556c61;
+            --accent-hover: #455b51;
             --button-text: #fff;
-            --soft: #e4e9ed;
-            --focus: #68869e;
+            --soft: #e3e5e1;
+            --focus: var(--accent);
         }
         :root[data-theme="dark"] {
             color-scheme: dark;
-            --page: #191c20;
-            --surface: #23272c;
-            --inset: #1c2025;
-            --text: #e5e9ed;
-            --muted: #adb8c2;
-            --border: #444d56;
-            --accent: #a7b7c5;
-            --accent-hover: #c4d0d9;
-            --button-text: #1a2026;
-            --soft: #343d45;
-            --focus: #9eb8ce;
+            --page: #1c1c1b;
+            --surface: #272726;
+            --inset: #20201f;
+            --text: #e9e9e6;
+            --muted: #b6b8b3;
+            --border: #484a46;
+            --accent: #a7b9ae;
+            --accent-hover: #bac9c0;
+            --button-text: #202622;
+            --soft: #353834;
         }
         body { background: var(--page); color: var(--text); }
         .section, .toolbar, .metric-card, .debug-container, .raw-data-panel, .interp-panel {
@@ -408,7 +407,7 @@
         h1, h2, h3, details summary, .raw-data-value { color: var(--text); }
         .hint, .signal-controls label, .raw-data-label, .metric-label, .metric-unit,
         .metric-timestamp, .stream-chip small, .cmd-list { color: var(--muted); }
-        .metric-value, .brand { color: var(--accent); }
+        a, .metric-value, .brand { color: var(--accent); }
         button, button.history, .icon-button.active { background: var(--accent); color: var(--button-text); }
         button:hover:not(:disabled) { background: var(--accent-hover); }
         .icon-button, .toolbar-menu > summary, .stream-toolbar button, .cmd-list button { background: var(--soft); color: var(--text); }
@@ -504,7 +503,7 @@
             .studio-row input[type=file] { max-width: 100%; }
         }
     </style>
-    <link rel="stylesheet" href="ring-lab.css?v=5a5ff70b899e">
+    <link rel="stylesheet" href="ring-lab.css?v=aeff3e13d8c1">
 </head>
 
 <body>
@@ -1072,16 +1071,16 @@
     </details>
 
     <script src="midi-maps.js?v=b332a9f95c13"></script>
-    <script src="ring-gesture-monitor.js?v=1a91ad4b3ab7"></script>
-    <script src="ring-gestures.js?v=6452ae92159e"></script>
+    <script src="ring-gesture-monitor.js?v=d7b7893edea3"></script>
+    <script src="ring-gestures.js?v=d205a2950213"></script>
     <script src="ring-firmware.js?v=3df40bd28133"></script>
     <script src="ring-lab-signals.js?v=fa3bcd68887f"></script>
     <script src="ring-lab-trajectory.js?v=554fc1fc561e"></script>
     <script src="ring-lab-synth.js?v=996871c07385"></script>
     <script src="ring-lab-pose.js?v=87c8cde29b07"></script>
-    <script src="ring-lab-calibration.js?v=238d0340994e"></script>
-    <script src="ring-lab-view.js?v=7cc0934a9bac"></script>
-    <script src="ring-lab.js?v=530586513f98"></script>
+    <script src="ring-lab-calibration.js?v=c139a3446162"></script>
+    <script src="ring-lab-view.js?v=073bb56a9b13"></script>
+    <script src="ring-lab.js?v=457f4e099ef4"></script>
     <script>
         // Global state variables
         const RingController = {
@@ -2887,11 +2886,13 @@
                 applyTheme();
                 Signals.draw();
                 Records.schedule();
+                MidiMaps.params.forEach(param => MidiMaps.drawSpark(param));
             });
             systemTheme.addEventListener('change', () => {
                 applyTheme();
                 Signals.draw();
                 Records.schedule();
+                MidiMaps.params.forEach(param => MidiMaps.drawSpark(param));
             });
             document.getElementById('system-log').addEventListener('toggle', event => {
                 if (event.currentTarget.open) DOM.log.scrollTop = DOM.log.scrollHeight;

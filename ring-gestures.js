@@ -234,16 +234,16 @@ const GestureLearning = {
 
     drawTrace(canvas,example) {
         const ctx = canvas.getContext('2d'), {width,height} = canvas;
-        ctx.fillStyle = '#101a27';
-        ctx.fillRect(0,0,width,height);
-        ctx.strokeStyle = '#526276';
+        const style = getComputedStyle(canvas);
+        ctx.clearRect(0,0,width,height);
+        ctx.strokeStyle = style.getPropertyValue('--plot-label');
         ctx.beginPath();
         ctx.moveTo(8,height/2);
         ctx.lineTo(width-8,height/2);
         ctx.stroke();
         const peak = Math.max(.2,...example.flat().map(Math.abs));
-        ['#84e8d5','#ffb881','#c0a7ff'].forEach((color,axis) => {
-            ctx.strokeStyle = color;
+        ['x','y','z'].forEach((name,axis) => {
+            ctx.strokeStyle = style.getPropertyValue('--trace-' + name);
             ctx.lineWidth = 2;
             ctx.beginPath();
             example.forEach((point,i) => {

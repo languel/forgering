@@ -615,7 +615,7 @@
         <div class="stream-toolbar">
             <label>Time window <select id="plot-window">
                 <option value="2">2 s</option><option value="5">5 s</option><option value="10">10 s</option>
-                <option value="30">30 s</option><option value="60">60 s</option><option value="120" selected>120 s</option>
+                <option value="30" selected>30 s</option><option value="60">60 s</option><option value="120">120 s</option>
             </select></label>
             <label>Interpolation interval (ms)
                 <input type="number" id="interp-interval" value="1000" min="10" max="10000" step="10">
@@ -2887,7 +2887,7 @@
                 'gesture-chart': ['gesture']
             },
             frame: null,
-            windowMs: 120000,
+            windowMs: 30000,
             init() {
                 const axis = document.getElementById('signal-axis'), min = document.getElementById('signal-min'), max = document.getElementById('signal-max'), smooth = document.getElementById('signal-smoothing'), status = document.getElementById('signal-status');
                 const show = () => { const v = this.settings[axis.value]; min.value=v.min; max.value=v.max; smooth.value=v.smoothing; document.getElementById('smooth-label').textContent=v.smoothing ? v.smoothing + '%' : 'Off'; status.textContent=''; };

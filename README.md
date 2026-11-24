@@ -30,7 +30,7 @@ In **Mapping**, choose the MIDI destination and channel. Enable **Freeze live MI
 
 Name and **Save map** to store assignments, channel, destination, acceleration ranges, smoothing, live switches, and gesture routes in this browser. Choose a saved map and **Load map** to restore it. Saving an existing name replaces that preset. Training examples remain in the gesture catalog. An unavailable MIDI destination must be selected again.
 
-Click **Edit** on a parameter to expand its range, smoothing, and sparkline controls. Drag the labeled lines on the plot or enter exact numbers. **CC** rescales the input into the output trim range. **Threshold note** opens above the on level and releases below the off level. **Timed note** triggers on the same upward crossing and releases after the chosen duration, then rearms below the off level. Blood raw and HRS raw are available with live output initially off. Click the **Live MIDI** column header to turn off every parameter and gesture MIDI route.
+Click a parameter name to expand its range, smoothing, and sparkline controls. Drag the labeled lines on the plot or enter exact numbers. **CC** rescales the input into the output trim range. **Threshold note** opens above the on level and releases below the off level. **Timed note** triggers on the same upward crossing and releases after the chosen duration, then rearms below the off level. Blood raw and HRS raw are available with live output initially off. Click the **Live MIDI** column header to turn off every parameter and gesture MIDI route.
 
 The last matched gesture highlights its row without shifting its controls.
 

@@ -43,12 +43,11 @@ const MidiMaps = {
         for (const [index,param] of this.params.entries()) {
             this.configs[param] = this.defaults(param);
             const row = table.tBodies[0].insertRow();
-            row.innerHTML = `<td><button type="button" class="midi-edit" aria-expanded="false">Edit ${this.labels[param]}</button></td>
+            row.innerHTML = `<td><button type="button" class="midi-edit" aria-expanded="false">${this.labels[param]}</button></td>
                 <td id="midi-${param}-data">—</td><td id="midi-${param}-value">0</td>
                 <td><select id="midi-${param}-type" aria-label="Event for ${this.labels[param]}">
                 <option value="cc">CC</option><option value="threshold">Threshold note</option><option value="pulse">Timed note</option></select></td>
                 <td><input id="midi-${param}-cc" type="number" min="0" max="127" value="${20+index}" aria-label="CC or note number for ${this.labels[param]}"></td>
-                <td><input id="midi-${param}-interp" type="checkbox" checked aria-label="Interpolate ${this.labels[param]}"></td>
                 <td><input id="midi-${param}-live" type="checkbox" checked aria-label="Live MIDI for ${this.labels[param]}"></td>
                 <td><button type="button" aria-label="Send MIDI once for ${this.labels[param]}">Send once</button></td>`;
             if(['gesture','steps','calories','distance'].includes(param))document.getElementById(`midi-${param}-type`).value='pulse';
@@ -59,7 +58,7 @@ const MidiMaps = {
             detail.hidden = true;
             detail.className = 'midi-row-editor';
             const cell = detail.insertCell();
-            cell.colSpan = 8;
+            cell.colSpan = 7;
             const controls = document.createElement('div');
             controls.className = 'midi-row-fields';
             const fields = {min:'Input min',max:'Input max',outMin:'CC trim min',outMax:'CC trim max',
@@ -98,8 +97,8 @@ const MidiMaps = {
                 this.drawSpark(param);
             };
             document.getElementById(`midi-${param}-live`).onchange=()=>this.stop(param);
-            for(const suffix of ['type','cc','interp'])document.getElementById(`midi-${param}-${suffix}`).addEventListener('change',()=>this.stop(param));
-            row.cells[7].querySelector('button').onclick=()=>{
+            for(const suffix of ['type','cc'])document.getElementById(`midi-${param}-${suffix}`).addEventListener('change',()=>this.stop(param));
+            row.cells[6].querySelector('button').onclick=()=>{
                 this.stop(param);
                 const type=document.getElementById(`midi-${param}-type`).value;
                 this.send(type==='cc'?'cc':'note',Number(document.getElementById(`midi-${param}-cc`).value),this.labels[param],this.configs[param].duration);
@@ -143,7 +142,6 @@ const MidiMaps = {
             input.parentElement.hidden=(['outMin','outMax'].includes(key) && type!=='cc') ||
                 (['on','off'].includes(key) && type==='cc') || (key==='duration' && type!=='pulse');
         }
-        document.getElementById(`midi-${param}-interp`).disabled=type!=='cc';
         this.drawSpark(param);
     },
 
@@ -181,18 +179,7 @@ const MidiMaps = {
             const target=Math.round(config.outMin+ratio*(config.outMax-config.outMin));
             document.getElementById(`midi-${param}-value`).textContent=target;
             if(type==='cc') {
-                RingController.midiTargetValues[param]=target;
-                if(!document.getElementById(`midi-${param}-interp`).checked) { MIDI.sendCC(number,target);continue; }
-                if(RingController.midiInterpolationTimers[param])continue;
-                RingController.midiCurrentValues[param]??=target;
-                RingController.midiInterpolationTimers[param]=setInterval(()=>{
-                    if(!this.live(param)) {this.stop(param);return;}
-                    const state=RingController.midiCurrentValues[param];
-                    const goal=RingController.midiTargetValues[param];
-                    RingController.midiCurrentValues[param]=state+Math.sign(goal-state);
-                    MIDI.sendCC(number,RingController.midiCurrentValues[param]);
-                    if(state===goal) {clearInterval(RingController.midiInterpolationTimers[param]);RingController.midiInterpolationTimers[param]=null;}
-                },10);
+                MIDI.sendCC(number,target);
             } else {
                 if(filtered<config.off) {
                     if(type==='threshold')this.release(param);
@@ -308,7 +295,6 @@ const MidiMaps = {
                 params:Object.fromEntries(this.params.map(param => [param,{
                     type:document.getElementById(`midi-${param}-type`).value,
                     number:Number(document.getElementById(`midi-${param}-cc`).value),
-                    interpolate:document.getElementById(`midi-${param}-interp`).checked,
                     live:document.getElementById(`midi-${param}-live`).checked,
                     config:this.cleanConfig(param)
                 }])),
@@ -336,7 +322,7 @@ const MidiMaps = {
             const row = map.params?.[param];
             if (!row && map.version === 1 && ['blood','hrs'].includes(param)) continue;
             if (!row || !['cc','note','threshold','pulse'].includes(row.type) || !number(row.number) ||
-                typeof row.live !== 'boolean' || typeof row.interpolate !== 'boolean') throw new Error('Invalid MIDI assignment.');
+                typeof row.live !== 'boolean') throw new Error('Invalid MIDI assignment.');
             if (row.config && !this.validConfig(row.config)) throw new Error('Invalid row settings.');
         }
         for (const rows of [map.builtins,map.learned]) {
@@ -379,7 +365,6 @@ const MidiMaps = {
                 cell.querySelector('input[type="checkbox"]').checked=config.spark;
                 document.getElementById(`midi-${param}-type`).value = row.type === 'note' ? 'pulse' : row.type;
                 document.getElementById(`midi-${param}-cc`).value = row.number;
-                document.getElementById(`midi-${param}-interp`).checked = row.interpolate;
                 document.getElementById(`midi-${param}-live`).checked = row.live;
                 this.refreshEditor(param);
             }

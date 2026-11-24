@@ -55,14 +55,16 @@ In an R02 session, the built-in **Camera Trigger** (`0x04`) fired after a pause 
 | COLMI R02 | `RY02_V3.0` | `RY02_3.00.38_250403` experimental 40 ms | 40 ms felt responsive, with about 1% repeated values reported |
 | COLMI R10 | `RY03CR_V1.0` | `RY03CR_1.00.06_T040H1` | Version verified after flashing and faster motion observed. Exact packet rate still to measure |
 
-The **Firmware** tab can reproduce both tested 40 ms builds locally. Download the exact stock base, select your ring's 40 ms preset, and choose the downloaded file. The app checks the base SHA-256, applies the patch, verifies the complete output SHA-256, and stages it for flashing.
+1. Open **Firmware** and choose **Connect ring** to read the hardware revision and running version.
+2. Choose a stock or 40 ms preset. Download its linked stock base and choose that file. The browser verifies its SHA-256, builds the selected image locally, and checks the result against the tested hash. For an existing complete image, expand **Use a local firmware file**.
+3. Choose **Flash firmware** and confirm. The image must match the connected hardware. Reconnect after the ring restarts to check the running version.
 
 | Build | Stock base download | Hardware |
 | --- | --- | --- |
 | R02 40 ms | [RY02_3.00.38_250403.bin](https://api2.qcwxkjvip.com/download/ota/RY02_V3.0/RY02_3.00.38_250403.bin) | `RY02_V3.0` |
 | R10 40 ms, T040H1 | [RY03CR_1.00.06_241212.bin](https://api2.qcwxkjvip.com/download/ota/RY03CR_V1.0/RY03CR_1.00.06_241212.bin) | `RY03CR_V1.0` |
 
-The stock image can also be staged using **Local stock or firmware image…**. Complete firmware files contain vendor code, and redistribution permission has not been established. The public repository provides patch instructions, verified hashes, and original download links.
+Complete firmware files contain vendor code, and redistribution permission has not been established. The public repository provides patch instructions, verified hashes, and original download links.
 
 The 40 ms builds target 25 reports/s. A retail model name can cover multiple hardware revisions. In **Firmware**, read the connected ring’s exact revision and stage a matching image before choosing **Flash firmware**. A wrong or failed update can leave the ring unusable. After reconnecting, read the running version to check activation.
 

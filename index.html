@@ -490,22 +490,22 @@
         .gesture-list { display: grid; margin: .45rem 0; }
         .gesture-row { border-top: 1px solid var(--border); padding: .45rem 0; margin: 0; }
         .gesture-row strong { min-width: 9rem; overflow-wrap: anywhere; }
-        #firmware-image, #firmware-mismatch, #firmware-version-check { display: block; overflow-wrap: anywhere; }
-        #firmware-mismatch { color: var(--text); }
-        #firmware-mismatch:empty, #firmware-version-check:empty { display: none; }
         .firmware-fields { max-width: 760px; }
+        .firmware-step { padding: 12px 0; }
+        .firmware-step + .firmware-step { border-top: 1px solid var(--border); }
+        .firmware-step h3 { margin: 0 0 7px; }
         .firmware-row {
             display: grid;
-            grid-template-columns: 3.5rem minmax(0, 1fr) 8rem;
+            grid-template-columns: minmax(0, 1fr) auto;
             align-items: center;
             gap: 8px;
-            min-height: 36px;
-            padding: 4px 0;
         }
-        .firmware-row > :is(output, select) { min-width: 0; overflow-wrap: anywhere; }
+        .firmware-row > output, #firmware-preset { min-width: 0; overflow-wrap: anywhere; }
         .firmware-row > button { min-height: 28px; }
-        .firmware-label { color: var(--muted); font-weight: 600; }
-        .firmware-upload { border-top: 1px solid var(--border); margin-top: 5px; padding-top: 8px; }
+        #firmware-preset { width: 100%; }
+        .firmware-local { margin-top: 7px; color: var(--muted); }
+        .firmware-local summary { cursor: pointer; }
+        .firmware-local input { display: block; margin-top: 6px; max-width: 100%; }
         .firmware-meter { display: flex; align-items: center; gap: 8px; }
         #firmware-progress {
             appearance: none;
@@ -519,13 +519,9 @@
         #firmware-progress::-webkit-progress-value { background: var(--accent); }
         #firmware-progress::-moz-progress-bar { background: var(--accent); }
         #firmware-percent { flex: 0 0 4ch; text-align: right; font-variant-numeric: tabular-nums; }
-        .firmware-feedback { padding-inline-start: calc(3.5rem + 8px); }
-        .firmware-feedback output { display: block; overflow-wrap: anywhere; }
-        .firmware-feedback output:empty { display: none; }
-        @media (max-width: 460px) {
-            .firmware-row { grid-template-columns: 3rem minmax(0, 1fr) 7rem; gap: 6px; }
-            .firmware-feedback { padding-inline-start: 0; }
-        }
+        .firmware-feedback { display: block; margin-top: 5px; overflow-wrap: anywhere; }
+        .firmware-feedback:empty { display: none; }
+        .firmware-note { color: var(--muted); margin: 5px 0 0; }
         .midi-mappings { overflow-x: auto; }
         #signal-status:empty, #record-probe:empty, #record-count:empty { display: none; }
         @media (max-width: 620px) {
@@ -550,7 +546,7 @@
                 <div class="menu-panel help-menu"><strong>Ring Studio Help</strong>
                     <p><b>Stream</b> — Connect in Chrome, then start the raw stream. Reboot restarts the connected ring. Use Connect again after it restarts. Click a metric to request a reading. Solid traces are raw, dashed are smoothed and dotted are interpolated. The rate next to Accelerometer counts incoming packets and changes in XYZ separately. Stop the stream before toggling Ring gestures to compare it with the raw-only stream.</p>
                     <p><b>Mapping</b> — Set the MIDI output and channel. Motion input ranges map to MIDI 0–127. To teach a gesture, add a name and record at least two examples with the ring in the same orientation. Perform each gesture once during the recording window, returning to rest between examples. Enable recognition and assign a note or CC.</p>
-                    <p><b>Firmware</b> — Stage an image, verify the connected hardware, and confirm Flash. Keep the ring charged and nearby until it restarts. Reconnect to verify the reported firmware. Experimental images may prevent normal operation.</p>
+                    <p><b>Firmware</b> — Connect your ring, choose its firmware from the dropdown, then confirm Flash firmware. Keep the ring charged and nearby until it restarts. Reconnect to check the running version. Experimental images may prevent normal operation.</p>
                     <p><b>Log &amp; commands</b> — Settings sends a checksummed packet of up to 15 bytes. Framed sends one command byte with optional data. Use loads a catalog command into the editor.</p>
                 </div>
             </details>
@@ -1086,41 +1082,55 @@
     <div id="pane-firmware" hidden>
         <section class="section">
             <h2>Firmware</h2>
-            <p>Download the exact stock base for your hardware, then select a 40 ms build and choose that file. The browser verifies and patches it locally before staging.</p>
-            <p><a href="https://api2.qcwxkjvip.com/download/ota/RY02_V3.0/RY02_3.00.38_250403.bin" target="_blank" rel="noopener">R02 stock base · RY02_V3.0</a> ·
-            <a href="https://api2.qcwxkjvip.com/download/ota/RY03CR_V1.0/RY03CR_1.00.06_241212.bin" target="_blank" rel="noopener">R10 stock base · RY03CR_V1.0</a> ·
-            <a href="docs/ring-firmware.md">Firmware findings</a></p>
             <div class="firmware-fields">
-                <div class="firmware-row">
-                    <span class="firmware-label">Ring</span>
-                    <output id="device-info" aria-live="polite">Disconnected</output>
-                    <button type="button" id="read-device-info" title="Read hardware and firmware from the connected ring">Read version</button>
-                </div>
-                <div class="firmware-row" id="firmware-picker">
-                    <label class="firmware-label" for="firmware-preset">Image</label>
-                    <select id="firmware-preset" title="Choose a bundled image or a local firmware file"></select>
-                    <button type="button" id="firmware-stage" title="Verify and preview the selected bundled image">Stage image</button>
-                    <input type="file" id="firmware-file" accept=".bin" hidden>
-                </div>
-                <div class="firmware-row" id="firmware-staged" hidden>
-                    <span class="firmware-label">Image</span>
-                    <output id="firmware-image" aria-live="polite"></output>
-                    <button type="button" id="firmware-change" title="Clear the staged image and choose another">Change image</button>
-                </div>
-                <div class="firmware-row firmware-upload">
-                    <label class="firmware-label" for="firmware-progress">Upload</label>
-                    <div class="firmware-meter">
-                        <progress id="firmware-progress" max="100" value="0"></progress>
-                        <span id="firmware-percent" aria-hidden="true">0%</span>
+                <section class="firmware-step">
+                    <h3>1. Connect your ring</h3>
+                    <div class="firmware-row">
+                        <output id="device-info" aria-live="polite">Disconnected</output>
+                        <button type="button" id="firmware-connect">Connect ring</button>
+                        <button type="button" id="read-device-info" hidden title="Read the connected ring’s hardware revision and firmware version">Read version</button>
                     </div>
-                    <button type="button" id="firmware-flash" disabled title="Flash a staged image matching the connected hardware">Flash firmware</button>
-                </div>
-                <div class="firmware-feedback">
-                    <output id="firmware-status" aria-live="polite"></output>
-                    <output id="firmware-version-check"></output>
-                    <output id="firmware-mismatch" aria-live="polite"></output>
-                </div>
+                </section>
+                <section class="firmware-step" id="firmware-picker">
+                    <h3><label for="firmware-preset">2. Choose firmware</label></h3>
+                    <select id="firmware-preset" aria-describedby="firmware-image">
+                        <option value="">Select a firmware image…</option>
+                        <optgroup label="COLMI R02 · RY02_V3.0">
+                            <option value="r02-40ms" data-build="r02">R02 · 40 ms experimental</option>
+                            <option value="r02-stock" data-build="r02" data-stock>R02 · Stock 3.00.38</option>
+                        </optgroup>
+                        <optgroup label="COLMI R10 · RY03CR_V1.0">
+                            <option value="r10-40ms" data-build="r10">R10 · 40 ms experimental (T040H1)</option>
+                            <option value="r10-stock" data-build="r10" data-stock>R10 · Stock 1.00.06</option>
+                        </optgroup>
+                    </select>
+                    <div id="firmware-base" hidden>
+                        <p><a id="firmware-stock-link" target="_blank" rel="noopener">Download stock base</a></p>
+                        <label for="firmware-base-file">Choose that stock file to prepare the selected image</label>
+                        <input type="file" id="firmware-base-file" accept=".bin">
+                    </div>
+                    <output class="firmware-feedback" id="firmware-image" aria-live="polite"></output>
+                    <details class="firmware-local">
+                        <summary>Use a local firmware file</summary>
+                        <input type="file" id="firmware-file" accept=".bin" aria-label="Local firmware file">
+                    </details>
+                </section>
+                <section class="firmware-step">
+                    <h3>3. Flash and verify</h3>
+                    <div class="firmware-row">
+                        <div class="firmware-meter">
+                            <progress id="firmware-progress" max="100" value="0" aria-label="Firmware upload progress"></progress>
+                            <span id="firmware-percent" aria-hidden="true">0%</span>
+                        </div>
+                        <button type="button" id="firmware-flash" disabled aria-describedby="firmware-mismatch">Flash firmware</button>
+                    </div>
+                    <output class="firmware-feedback" id="firmware-mismatch" aria-live="polite"></output>
+                    <output class="firmware-feedback" id="firmware-version-check"></output>
+                    <output class="firmware-feedback" id="firmware-status" aria-live="polite"></output>
+                    <p class="firmware-note">Keep the ring charged and nearby. Reconnect after it restarts to check the running version.</p>
+                </section>
             </div>
+            <a href="docs/ring-firmware.md">Firmware findings</a>
         </section>
     </div>
     </main>

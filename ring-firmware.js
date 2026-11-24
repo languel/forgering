@@ -12,56 +12,66 @@ const FirmwareLoader = {
 
     init() {
         const preset = document.getElementById('firmware-preset');
-        preset.add(new Option('R02 · build tested 40 ms image', 'r02'));
-        preset.add(new Option('R10 · build tested 40 ms image', 'r10'));
-        preset.add(new Option('Local stock or firmware image…', 'local'));
-        this.patches = fetch('firmware/40ms-patches.json').then(response => {
-            if (!response.ok) throw new Error('Could not load firmware patch catalog');
-            return response.json();
-        });
         const local = document.getElementById('firmware-file');
-        const stageButton = document.getElementById('firmware-stage');
-        const changeButton = document.getElementById('firmware-change');
-        preset.addEventListener('change', () => {
+        const base = document.getElementById('firmware-base');
+        const baseFile = document.getElementById('firmware-base-file');
+        preset.addEventListener('change', async () => {
+            local.value = baseFile.value = '';
             this.clear();
-            const isLocal = preset.value === 'local';
-            stageButton.textContent = isLocal ? 'Choose file…' : 'Choose stock base…';
-            stageButton.title = 'Choose the downloaded stock image to verify and prepare locally';
+            base.hidden = true;
+            const option = preset.selectedOptions[0];
+            if (!option?.value) return;
+            const selection = this.selection;
+            try {
+                const build = await this.presetBuild(option);
+                if (selection !== this.selection) return;
+                const link = document.getElementById('firmware-stock-link');
+                link.href = build.source;
+                link.textContent = `Download ${build.stock}`;
+                base.hidden = false;
+            } catch (error) {
+                if (selection === this.selection) this.status(error.message);
+            }
         });
-        stageButton.textContent = 'Choose stock base…';
-        stageButton.addEventListener('click', () => {
-            this.pendingPreset = preset.value;
-            local.value = '';
-            local.click();
+        baseFile.addEventListener('change', () => {
+            const file = baseFile.files[0];
+            const option = preset.selectedOptions[0];
+            if (!file || !option?.value) return;
+            void this.stage(() => this.readPreset(option,file));
         });
         local.addEventListener('change', () => {
             const file = local.files[0];
             if (!file) return;
-            const selected = this.pendingPreset;
-            void this.stage(file.name, async () => {
-                const buffer = await file.arrayBuffer();
-                if (selected === 'local') return buffer;
-                const patch = (await this.patches).find(item => item.id === selected);
-                if (!patch) throw new Error('Unknown firmware build');
-                const output = await FirmwareLoader.build40ms(buffer,patch);
-                return output.buffer;
-            }, selected === 'local' ? null : selected);
+            local.value = '';
+            preset.value = '';
+            base.hidden = true;
+            void this.stage(async () => ({name: file.name, buffer: await file.arrayBuffer()}));
         });
-        changeButton.addEventListener('click', () => {
-            this.clear();
-            preset.focus();
-        });
+        document.getElementById('firmware-connect').addEventListener('click', () => void BLE.connect());
         document.getElementById('firmware-flash').addEventListener('click', () => void this.flash());
     },
 
-    async build40ms(buffer, patch) {
-        const hash = async bytes => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),
-            value => value.toString(16).padStart(2,'0')).join('');
-        if (await hash(buffer) !== patch.inputHash) throw new Error('Stock SHA-256 differs from the tested base. Use the exact linked stock file.');
-        const bytes = new Uint8Array(buffer.slice(0));
-        for (const change of patch.changes) bytes.set(change.bytes,change.offset);
-        if (await hash(bytes) !== patch.outputHash) throw new Error('Built firmware hash differs from the tested image');
-        return bytes;
+    async presetBuild(option) {
+        const catalog = await fetch('firmware/40ms-patches.json');
+        if (!catalog.ok) throw new Error('Firmware catalog is unavailable. Choose the image again to retry.');
+        const build = (await catalog.json()).find(item => item.id === option.dataset.build);
+        if (!build) throw new Error('Unknown firmware preset');
+        return build;
+    },
+
+    async readPreset(option,file) {
+        const build = await this.presetBuild(option);
+        const buffer = await file.arrayBuffer();
+        const hash = async input => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',input)),
+            byte => byte.toString(16).padStart(2,'0')).join('');
+        if (await hash(buffer) !== build.inputHash) throw new Error('Stock SHA-256 differs from the linked base for this preset');
+        const bytes = new Uint8Array(buffer);
+        const stock = option.hasAttribute('data-stock');
+        if (!stock) {
+            for (const change of build.changes) bytes.set(change.bytes,change.offset);
+        }
+        if (await hash(bytes) !== (stock ? build.inputHash : build.outputHash)) throw new Error('Image SHA-256 differs from the verified preset');
+        return {name:stock ? build.stock : build.name,buffer:bytes.buffer,hardware:build.hardware};
     },
 
     clear() {
@@ -74,25 +84,24 @@ const FirmwareLoader = {
         this.render();
     },
 
-    async stage(name, read, buildId = null) {
+    async stage(read) {
         this.clear();
         const selection = this.selection;
-        this.status('Reading image…');
+        const output = document.getElementById('firmware-image');
+        output.textContent = 'Verifying image…';
         try {
-            const buffer = await read();
-            const image = this.inspect(buffer);
-            if (buildId) name = (await this.patches).find(item => item.id === buildId).name;
+            const {name, buffer, hardware} = await read();
             if (selection !== this.selection) return;
+            const image = this.inspect(buffer);
+            if (hardware && image.hardware !== hardware) throw new Error('Image hardware differs from the preset');
             this.image = {name, ...image};
-            document.getElementById('firmware-image').textContent = `${name} · ${image.hardware} · ${image.bytes.length.toLocaleString()} bytes`;
-            this.status('');
-            const moveFocus = document.activeElement === document.getElementById('firmware-stage');
+            output.textContent = `Image verified · ${image.hardware} · ${image.version}`;
             this.render();
-            if (moveFocus) document.getElementById('firmware-change').focus();
         } catch (error) {
-            if (selection === this.selection) this.status(`Image rejected: ${error.message}`);
+            if (selection !== this.selection) return;
+            output.textContent = `Image rejected · ${error.message}`;
+            return false;
         }
-        this.render();
     },
 
     inspect(buffer) {
@@ -120,21 +129,25 @@ const FirmwareLoader = {
     },
 
     render() {
-        document.getElementById('firmware-picker').hidden = Boolean(this.image);
-        document.getElementById('firmware-staged').hidden = !this.image;
-        document.getElementById('firmware-change').disabled = this.active;
         const button = document.getElementById('firmware-flash');
+        const connected = RingController.isConnected;
         const matching = this.image && this.hardware === this.image.hardware;
-        button.disabled = this.active || !matching || !RingController.isConnected;
-        button.title = this.image && this.hardware && !matching
-            ? `Hardware mismatch: image ${this.image.hardware}, ring ${this.hardware}`
-            : 'Flash a staged image matching the connected hardware';
+        button.disabled = this.active || !matching || !connected;
+        const connect = document.getElementById('firmware-connect');
+        connect.hidden = connected;
+        connect.disabled = this.active || RingController.isConnecting;
+        connect.textContent = RingController.isConnecting ? 'Connecting…' : 'Connect ring';
+        const read = document.getElementById('read-device-info');
+        read.hidden = !connected;
+        read.disabled = this.active;
         const comparison = document.getElementById('firmware-version-check');
         comparison.textContent = matching && this.reportedVersion && this.reportedVersion !== this.image.version
-            ? `Running ${this.reportedVersion} · staged ${this.image.version}` : '';
-        const mismatch = document.getElementById('firmware-mismatch');
-        mismatch.textContent = this.image && this.hardware && !matching ? button.title : '';
-        document.getElementById('read-device-info').disabled = this.active || !RingController.isConnected;
+            ? `Running ${this.reportedVersion} · selected ${this.image.version}` : '';
+        const gate = document.getElementById('firmware-mismatch');
+        if (this.active || !this.image || matching) gate.textContent = '';
+        else if (!connected) gate.textContent = 'Connect the ring to check compatibility.';
+        else if (!this.hardware) gate.textContent = 'Read the ring’s hardware revision before flashing.';
+        else gate.textContent = `Hardware mismatch · image ${this.image.hardware} · ring ${this.hardware}`;
     },
 
     setProgress(percent) {
@@ -235,7 +248,7 @@ const FirmwareLoader = {
         };
         this.verification = null;
         this.active = true;
-        const locked = document.querySelectorAll('.toolbar, .studio-tabs, #system-log, #firmware-preset, #firmware-stage, #firmware-file');
+        const locked = document.querySelectorAll('.toolbar, .studio-tabs, #system-log, #firmware-picker');
         locked.forEach(element => { element.inert = true; });
         this.render();
         this.setProgress(0);

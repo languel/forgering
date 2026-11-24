@@ -531,14 +531,15 @@
             .studio-row input[type=file] { max-width: 100%; }
         }
     </style>
-    <style>.toolbar .ring-glyph { font-size: 32px; line-height: 1; font-weight: 400; padding-inline: 3px; }</style>
+    <style>.toolbar .status-indicator.ring-glyph { display: inline-block; width: auto; height: auto; border-radius: 0; background: none; font-size: 32px; line-height: 1; font-weight: 400; color: var(--muted); }
+    .toolbar .status-indicator.ring-glyph.connected { color: #73bc91; background: none; }
+    .toolbar .status-indicator.ring-glyph.connecting { color: #d9b971; background: none; }</style>
     <link rel="stylesheet" href="ring-lab.css?v=57460086c38a">
 </head>
 
 <body>
     <header class="toolbar" aria-label="Ring controls">
-        <div class="brand ring-glyph" role="img" aria-label="ForgeRing" title="ForgeRing">◎</div>
-        <div class="status-bar"><span class="status-indicator" id="status-indicator"></span><span id="connection-status">Disconnected</span></div>
+        <div class="status-bar"><span class="status-indicator ring-glyph" id="status-indicator" aria-hidden="true" title="ForgeRing">◎</span><span id="connection-status">Disconnected</span></div>
         <div class="toolbar-actions">
             <button class="icon-button" id="connectButton" title="Connect ring" aria-label="Connect ring">Connect</button>
             <button class="icon-button" id="rebootButton" type="button" title="Restart the connected ring" disabled>Reboot</button>

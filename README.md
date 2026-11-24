@@ -4,7 +4,7 @@ Ring Studio is a browser instrument for turning live smart-ring motion into crea
 
 ## For students
 
-Open [Ring Studio](https://languel.github.io/forgering-studio/) in desktop Chrome with Bluetooth enabled. You can try **Gesture Lab → Demo** and the internal synth before connecting a ring. For hardware, click **Connect**, select your R02 or R10, then start the stream.
+Open [Ring Studio](https://languel.github.io/forgering/) in desktop Chrome with Bluetooth enabled. You can try **Gesture Lab → Demo** and the internal synth before connecting a ring. For hardware, click **Connect**, select your R02 or R10, then start the stream.
 
 The webcam is optional for pose calibration and stops automatically when calibration completes. Training examples are saved in the browser for this site. Examples recorded on localhost stay with the localhost origin.
 

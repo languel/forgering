@@ -13,7 +13,7 @@ const MidiMaps = {
         const ranges = {x:[-4,4],y:[-4,4],z:[-4,4],blood:[0,4000],hrs:[0,4000],hr:[40,180],
             gesture:[0,6],steps:[0,10000],calories:[0,1000],distance:[0,10000]};
         const [min,max] = ranges[param];
-        return {min,max,outMin:0,outMax:127,smoothing:0,on:Number((min+(max-min)*.7).toFixed(3)),off:Number((min+(max-min)*.5).toFixed(3)),duration:250,spark:true};
+        return {min,max,outMin:0,outMax:127,smoothing:0,slideIn:0,slideOut:0,on:Number((min+(max-min)*.7).toFixed(3)),off:Number((min+(max-min)*.5).toFixed(3)),duration:250,spark:true};
     },
     init() {
         this.freeze = document.getElementById('midi-freeze');
@@ -62,7 +62,7 @@ const MidiMaps = {
             const controls = document.createElement('div');
             controls.className = 'midi-row-fields';
             const fields = {min:'Input min',max:'Input max',outMin:'CC trim min',outMax:'CC trim max',
-                smoothing:'Smoothing %',on:'Note on above',off:'Note off below',duration:'Note duration (ms)'};
+                on:'Note on above',off:'Note off below',duration:'Note duration (ms)'};
             for (const [key,label] of Object.entries(fields)) {
                 const wrap = document.createElement('label'),input = document.createElement('input');
                 wrap.textContent = label;
@@ -80,6 +80,23 @@ const MidiMaps = {
                 };
                 wrap.append(input);controls.append(wrap);
             }
+            for(const [key,label] of [['slideIn','Slide in'],['slideOut','Slide out']]) {
+                const wrap=document.createElement('label');
+                const text=document.createElement('span');
+                text.textContent=label;
+                const input=document.createElement('input');
+                Object.assign(input,{type:'range',min:'0',max:'3000',step:'10',value:'0'});
+                input.dataset.setting=key;
+                input.setAttribute('aria-label',`${label} for ${this.labels[param]}`);
+                const readout=document.createElement('output');
+                readout.textContent='0 ms';
+                input.addEventListener('input',()=>{
+                    this.configs[param][key]=Number(input.value);
+                    readout.textContent=input.value+' ms';
+                });
+                wrap.append(text,input,readout);
+                controls.append(wrap);
+            }
             const sparkLabel=document.createElement('label'),sparkToggle=document.createElement('input');
             sparkToggle.type='checkbox';sparkToggle.checked=true;
             sparkLabel.append(sparkToggle,' Sparkline');
@@ -87,7 +104,7 @@ const MidiMaps = {
             canvas.width=840;canvas.height=190;canvas.className='midi-spark';
             canvas.setAttribute('aria-label',`Signal and draggable range and threshold lines for ${this.labels[param]}`);
             sparkToggle.onchange=()=>{this.configs[param].spark=sparkToggle.checked;canvas.hidden=!sparkToggle.checked;};
-            const hint=document.createElement('p');hint.className='hint';hint.textContent='Drag the labeled lines to change input range or note thresholds.';
+            const hint=document.createElement('p');hint.className='hint';hint.textContent='Raw: dashed gray · Filtered: mint. Drag range and threshold lines. Slide times reach 90% of a change.';
             cell.append(controls,sparkLabel,hint,canvas);
             row.querySelector('.midi-edit').onclick = event => {
                 for (const item of table.querySelectorAll('.midi-row-editor')) if (item!==detail) item.hidden=true;
@@ -118,6 +135,27 @@ const MidiMaps = {
         document.getElementById('midi-map-save').addEventListener('click',() => this.save());
         document.getElementById('midi-map-load').addEventListener('click',() => this.load());
         this.refresh();
+        setInterval(()=>{
+            const now=performance.now();
+            for(const param of this.params) {
+                const config=this.configs[param];
+                if(config._raw===undefined)continue;
+                if(now-config._received>2000) {this.release(param);continue;}
+                this.process(param,now);
+            }
+        },25);
+    },
+
+    suspend() {
+        for(const param of this.params) {
+            this.stop(param);
+            const config=this.configs[param];
+            if(config) {
+                delete config._raw;
+                delete config._filterTime;
+                delete config._filtered;
+            }
+        }
     },
 
     frozen() { return document.getElementById('midi-freeze')?.checked ?? false; },
@@ -146,7 +184,8 @@ const MidiMaps = {
     },
 
     validConfig(row) {
-        return ['min','max','outMin','outMax','smoothing','on','off','duration'].every(key=>Number.isFinite(row[key])) &&
+        const slides=[row.slideIn??0,row.slideOut??0];
+        return slides.every(value=>Number.isFinite(value)&&value>=0&&value<=3000) && ['min','max','outMin','outMax','smoothing','on','off','duration'].every(key=>Number.isFinite(row[key])) &&
             row.min<row.max && row.off<row.on && row.outMin>=0 && row.outMin<=127 &&
             row.outMax>=0 && row.outMax<=127 && row.smoothing>=0 && row.smoothing<=90 &&
             row.duration>=10 && row.duration<=10000;
@@ -164,17 +203,35 @@ const MidiMaps = {
             const param=source==='heart-rate'?'hr':source;
             const config=this.configs[param];
             if(!config || !Number.isFinite(raw))continue;
-            const points=this.history[param];
-            points.push([now,raw]);
-            while(points.length>250 || now-points[0][0]>5000)points.shift();
+            if(now-(config._received??now)>2000) {
+                delete config._filtered;
+                delete config._filterTime;
+            }
+            config._raw=raw;
+            config._received=now;
             document.getElementById(`midi-${param}-data`).textContent=Number(raw.toFixed(3));
-            this.drawSpark(param);
-            if(!this.live(param))continue;
-            const filtered=config._filtered===undefined?raw:config._filtered*config.smoothing/100+raw*(1-config.smoothing/100);
+            this.process(param,now);
+        }
+    },
+
+    process(param,now) {
+            const config=this.configs[param],raw=config._raw;
+            const previous=config._filtered??raw;
+            const slide=raw>previous?config.slideIn:config.slideOut;
+            const dt=Math.max(0,now-(config._filterTime??now));
+            // Slide is the time to follow 90% of a step, independent of packet rate.
+            const amount=slide>0?1-Math.exp(-Math.LN10*dt/slide):1;
+            const filtered=previous+(raw-previous)*amount;
             config._filtered=filtered;
+            config._filterTime=now;
+            const points=this.history[param];
+            points.push([now,raw,filtered]);
+            while(points.length>300 || now-points[0][0]>5000)points.shift();
+            this.drawSpark(param);
+            if(!this.live(param))return;
             const type=document.getElementById(`midi-${param}-type`).value;
             const number=Number(document.getElementById(`midi-${param}-cc`).value);
-            if(!Number.isInteger(number)||number<0||number>127)continue;
+            if(!Number.isInteger(number)||number<0||number>127)return;
             const ratio=Math.max(0,Math.min(1,(filtered-config.min)/(config.max-config.min)));
             const target=Math.round(config.outMin+ratio*(config.outMax-config.outMin));
             document.getElementById(`midi-${param}-value`).textContent=target;
@@ -188,7 +245,7 @@ const MidiMaps = {
                 if(filtered>config.on && !config._trigger) {
                     config._trigger=true;
                     const output=RingController.midiOutput, channel=Number(RingController.midiChannel);
-                    if(!output)continue;
+                    if(!output)return;
                     this.release(param);
                     try {
                         output.send([0x90+channel,number,100]);
@@ -197,7 +254,6 @@ const MidiMaps = {
                     } catch(error){UI.addLog(`MIDI note failed: ${error.message}`);}
                 }
             }
-        }
     },
 
     release(param) {
@@ -212,16 +268,23 @@ const MidiMaps = {
         const row=this.configs[param], canvas=row._cell.querySelector('canvas');
         if(canvas.hidden || canvas.closest('tr').hidden)return;
         const points=this.history[param],ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
-        const low=Math.min(row.min,row.off,...points.map(point=>point[1]));
-        const high=Math.max(row.max,row.on,...points.map(point=>point[1]));
+        const low=Math.min(row.min,row.off,...points.flatMap(point=>point.slice(1)));
+        const high=Math.max(row.max,row.on,...points.flatMap(point=>point.slice(1)));
         const pad=(high-low)*.12;
         const min=low-pad,max=high+pad;
         row._plot={min,max};
         const y=value=>h-12-(value-min)/(max-min)*(h-24);
         ctx.fillStyle='#0a1321';ctx.fillRect(0,0,w,h);
-        ctx.strokeStyle='#a5f5d5';ctx.lineWidth=2;ctx.beginPath();
         const now=performance.now();
-        points.forEach(([t,value],i)=>{const x=(t-now+5000)/5000*(w-130);if(i)ctx.lineTo(x,y(value));else ctx.moveTo(x,y(value));});ctx.stroke();
+        for(const [column,color,dash] of [[1,'#8c9aad',[5,4]],[2,'#a5f5d5',[]]]) {
+            ctx.strokeStyle=color;ctx.lineWidth=2;ctx.setLineDash(dash);ctx.beginPath();
+            points.forEach((point,i)=>{
+                const x=(point[0]-now+5000)/5000*(w-130),value=point[column];
+                if(i)ctx.lineTo(x,y(value));else ctx.moveTo(x,y(value));
+            });
+            ctx.stroke();
+        }
+        ctx.setLineDash([]);
         ctx.font='13px monospace';
         const type=document.getElementById(`midi-${param}-type`).value;
         const lines=type==='cc'?[['min','#8295ab'],['max','#8295ab']]:
@@ -355,11 +418,20 @@ const MidiMaps = {
                 const row = map.params[param];
                 if (!row) continue;
                 const legacy = ['x','y','z'].includes(param) ? map.signals[param] : {};
-                const config = row.config ?? {...this.defaults(param),...legacy};
+                const config = {...this.defaults(param),...(row.config ?? legacy)};
+                if(row.config?.slideIn===undefined) {
+                    const smoothing=config.smoothing/100;
+                    const duration=smoothing>0?Math.min(3000,Math.round(-40*Math.LN10/Math.log(smoothing))):0;
+                    config.slideIn=duration;
+                    config.slideOut=duration;
+                }
                 delete this.configs[param]._filtered;
                 Object.assign(this.configs[param],config);
                 const cell=this.configs[param]._cell;
-                cell.querySelectorAll('[data-setting]').forEach(input=>input.value=this.configs[param][input.dataset.setting]);
+                cell.querySelectorAll('[data-setting]').forEach(input=>{
+                    input.value=this.configs[param][input.dataset.setting];
+                    if(input.type==='range')input.parentElement.querySelector('output').textContent=input.value+' ms';
+                });
                 const canvas=cell.querySelector('canvas');
                 canvas.hidden=!config.spark;
                 cell.querySelector('input[type="checkbox"]').checked=config.spark;

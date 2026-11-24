@@ -176,3 +176,6 @@
 .midi-mappings .midi-edit { white-space: nowrap; }
 
 .midi-row-fields label[hidden] { display: none; }
+
+.midi-row-fields input[type="range"] { width: 150px !important; }
+.midi-row-fields output { font-size: 11px; color: var(--muted); }
